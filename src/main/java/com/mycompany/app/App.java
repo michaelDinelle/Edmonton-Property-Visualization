@@ -129,8 +129,14 @@ public class App extends Application {
         filterButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         filterButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 5;");
 
+        // Add a search field for account number
+        Label accountSearchLabel = new Label("Search by Account Number:");
+        TextField accountSearchInput = new TextField();
+        accountSearchInput.setPromptText("Enter account number");
+        Button accountSearchButton = new Button("Search");
+
         // Add elements to filter panel
-        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton);
+        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton);
 
         // Wrap the filter panel in a StackPane to position it
         StackPane filterContainer = new StackPane(filterPanel);
@@ -140,6 +146,29 @@ public class App extends Application {
         // Position the filter panel to the top-left corner
         StackPane.setMargin(filterPanel, new Insets(10, 0, 0, 10));
         borderPane.setLeft(filterContainer);
+
+
+        // Add functionality to Account Search button
+
+        accountSearchButton.setOnAction(event -> {
+            String accountNumber = accountSearchInput.getText().trim();
+            if (accountNumber.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please enter an account number.", ButtonType.OK);
+                alert.showAndWait();
+                return;
+            }
+            PropertyAssessment property = propertiesClass.getProperties().stream()
+                    .filter(p -> Integer.toString(p.getAccountID()).equalsIgnoreCase(accountNumber))
+                    .findFirst()
+                    .orElse(null);
+            if (property == null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
+                alert.showAndWait();
+            } else {
+//                displayPropertyInfo(property);
+                highlightSelectedProperty(property);
+            }
+        });
 
 
         // Add functionality to the filter button
@@ -200,6 +229,18 @@ public class App extends Application {
 
     }
 
+    // Highlight selected property
+    private void highlightSelectedProperty(PropertyAssessment property) {
+//        graphicsOverlay.getGraphics().clear();
+        SimpleMarkerSymbol selectedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
+        Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+        Graphic highlightedGraphic = new Graphic(point, selectedSymbol);
+        graphicsOverlay.getGraphics().add(highlightedGraphic);
+
+        // Center the map on the Highlighted property
+        mapView.setViewpointCenterAsync(point, 10000);
+
+    }
 
     private void addPropertiesToMap(List<PropertyAssessment> properties) {
         for (PropertyAssessment property : properties) {
