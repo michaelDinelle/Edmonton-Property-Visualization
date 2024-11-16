@@ -99,8 +99,8 @@ public class App extends Application {
         }
 
         // Center the map on Edmonton
-        Point viewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
-        mapView.setViewpointCenterAsync(viewPoint, 15000);
+        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
@@ -130,6 +130,12 @@ public class App extends Application {
         filterButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         filterButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 5;");
 
+        // Button to remove the filters
+        Button removeFilterButton = new Button("Remove Filters");
+        removeFilterButton .setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        removeFilterButton.setStyle("-fx-background-color: #ca072f; -fx-text-fill: white; -fx-background-radius: 5;");
+
+
         // Add a search field for account number
         Label accountSearchLabel = new Label("Search by Account Number:");
         TextField accountSearchInput = new TextField();
@@ -149,7 +155,7 @@ public class App extends Application {
         propertyInfoPanel.getChildren().addAll(propertyInfoLabel, propertyInfoArea);
 
         // Add elements to filter panel
-        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton, propertyInfoPanel);
+        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton, propertyInfoPanel, removeFilterButton);
 
         // Wrap the filter panel in a StackPane to position it
         StackPane filterContainer = new StackPane(filterPanel);
@@ -214,6 +220,19 @@ public class App extends Application {
             // Update the map with filtered properties
             updateMapWithFilteredProperties(filteredProperties);
         });
+
+
+        //Add functionality to remove filters button
+        removeFilterButton.setOnAction(event ->{
+
+            graphicsOverlay.getGraphics().clear();
+            addPropertiesToMap(propertiesClass.getProperties());
+
+            mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+
+        });
+
+
     }
 
     private Color getAssesmentColor(long assessedValue){
