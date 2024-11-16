@@ -19,13 +19,13 @@
         </repository>
     </repositories>
     <dependencies>
-        <!--JavaFX dependencies -->
+        <!-- JavaFX dependencies -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>21.0.3</version>
         </dependency>
-        <!--ArcGIS dependencies -->
+        <!-- ArcGIS dependencies -->
         <dependency>
             <groupId>com.esri.arcgisruntime</groupId>
             <artifactId>arcgis-java</artifactId>
@@ -43,7 +43,7 @@
             <version>${arcgis.version}</version>
             <type>zip</type>
         </dependency>
-        <!--SLF4J dependencies-->
+        <!-- SLF4J dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-nop</artifactId>
@@ -56,33 +56,39 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.1.1</version>
-                <configuration>
-                    <artifactItems>
-                        <artifactItem>
-                            <groupId>com.esri.arcgisruntime</groupId>
-                            <artifactId>arcgis-java-jnilibs</artifactId>
-                            <version>${arcgis.version}</version>
-                            <type>zip</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${user.home}/.arcgis/${arcgis.version}</outputDirectory>
-                        </artifactItem>
-                        <artifactItem>
-                            <groupId>com.esri.arcgisruntime</groupId>
-                            <artifactId>arcgis-java-resources</artifactId>
-                            <version>${arcgis.version}</version>
-                            <type>zip</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${user.home}/.arcgis/${arcgis.version}</outputDirectory>
-                        </artifactItem>
-                    </artifactItems>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>unpack-dependencies</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.esri.arcgisruntime</groupId>
+                                    <artifactId>arcgis-java-jnilibs</artifactId>
+                                    <version>${arcgis.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${user.home}/.arcgis/${arcgis.version}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.esri.arcgisruntime</groupId>
+                                    <artifactId>arcgis-java-resources</artifactId>
+                                    <version>${arcgis.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${user.home}/.arcgis/${arcgis.version}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.0</version>
                 <configuration>
-                    <release>17</release>
                     <source>17</source>
                     <target>17</target>
                 </configuration>
@@ -101,11 +107,6 @@
                 <configuration>
                     <mainClass>com.mycompany.app.App</mainClass>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>io.takari</groupId>
-                <artifactId>maven</artifactId>
-                <version>0.7.4</version>
             </plugin>
         </plugins>
     </build>
