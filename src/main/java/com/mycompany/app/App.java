@@ -72,14 +72,22 @@ public class App extends Application {
 
         // Create an ArcGISMap with an imagery basemap
         ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_IMAGERY);
+
+        // Set the reference scale for the map
+        map.setReferenceScale(10000);
+
         mapView.setMap(map);
 
         // Create a graphics overlay
         graphicsOverlay = new GraphicsOverlay();
+
+        // Enable scaling of symbols in the graphics overlay
+        graphicsOverlay.setScaleSymbols(true);
+
         mapView.getGraphicsOverlays().add(graphicsOverlay);
 
         // Create a symbol for the graphics
-        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 10);
+        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 20);
 
         // Load property data
         final PropertyAssessments propertiesClass;
