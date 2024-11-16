@@ -36,6 +36,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -135,8 +136,20 @@ public class App extends Application {
         accountSearchInput.setPromptText("Enter account number");
         Button accountSearchButton = new Button("Search");
 
+        // Property information panel
+        VBox propertyInfoPanel = new VBox(10);
+        propertyInfoPanel.setPadding(new Insets(15));
+        propertyInfoPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        Label propertyInfoLabel = new Label("Property Information:");
+        propertyInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        propertyInfoLabel.setStyle("-fx-text-fill: #2b5b84;");
+        TextArea propertyInfoArea = new TextArea();
+        propertyInfoArea.setEditable(false);
+        propertyInfoArea.setWrapText(true);
+        propertyInfoPanel.getChildren().addAll(propertyInfoLabel, propertyInfoArea);
+
         // Add elements to filter panel
-        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton);
+        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton, propertyInfoPanel);
 
         // Wrap the filter panel in a StackPane to position it
         StackPane filterContainer = new StackPane(filterPanel);
@@ -165,7 +178,7 @@ public class App extends Application {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
                 alert.showAndWait();
             } else {
-//                displayPropertyInfo(property);
+                displayPropertyInfo(property, propertyInfoArea);
                 highlightSelectedProperty(property);
             }
         });
@@ -228,6 +241,37 @@ public class App extends Application {
 
 
     }
+
+    // Display property information
+    private void displayPropertyInfo(PropertyAssessment property, TextArea propertyInfoArea) {
+        if (property == null) {
+            propertyInfoArea.setText("No property information available.");
+        } else {
+
+            //For formatting assessed value into a currency
+            DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+            propertyInfoArea.setText(String.format(
+                            "Account Number: %s%n" +
+                            "Address: %s%n%n" +
+                            "Garage: %s%n%n"  +
+                            "Assessment Value: $%s %n%n" +
+                            "Neighborhood: %s%n%n" +
+                            "Assessment Class: %s%n%n" +
+                            "Latitude: %f%n" +
+                            "Longitude %f%n",
+                    property.getAccountID(),
+                    property.getAddress(),
+                    property.getGarage(),
+                    numberFormat.format(property.getAssessedValue()),
+                    property.getNeighborhood().getNeighborhoodName(),
+                    property.getAssessmentClass(),
+                    property.getLocation().getLat(),
+                    property.getLocation().getLng()
+            ));
+        }
+    }
+
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
