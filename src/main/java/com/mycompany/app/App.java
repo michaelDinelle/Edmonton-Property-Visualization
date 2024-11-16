@@ -71,7 +71,7 @@ public class App extends Application {
         borderPane.setCenter(mapView);
 
         // Create an ArcGISMap with an imagery basemap
-        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_IMAGERY);
+        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
 
         // Set the reference scale for the map
         map.setReferenceScale(10000);
