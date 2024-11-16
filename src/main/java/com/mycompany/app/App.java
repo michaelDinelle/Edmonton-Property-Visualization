@@ -36,6 +36,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,15 +72,21 @@ public class App extends Application {
         borderPane.setCenter(mapView);
 
         // Create an ArcGISMap with an imagery basemap
-        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_IMAGERY);
+        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
+
+        // Set the reference scale for the map
+        map.setReferenceScale(10000);
+
         mapView.setMap(map);
 
         // Create a graphics overlay
         graphicsOverlay = new GraphicsOverlay();
+
+        // Enable scaling of symbols in the graphics overlay
+        graphicsOverlay.setScaleSymbols(true);
+
         mapView.getGraphicsOverlays().add(graphicsOverlay);
 
-        // Create a symbol for the graphics
-        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 10);
 
         // Load property data
         final PropertyAssessments propertiesClass;
@@ -92,11 +99,11 @@ public class App extends Application {
         }
 
         // Center the map on Edmonton
-        Point viewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
-        mapView.setViewpointCenterAsync(viewPoint, 15000);
+        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
         // Add all properties to the map initially
-        addPropertiesToMap(propertiesClass.getProperties(), symbol);
+        addPropertiesToMap(propertiesClass.getProperties());
 
 
         // Create a filter panel using VBox
@@ -123,8 +130,32 @@ public class App extends Application {
         filterButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         filterButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 5;");
 
+        // Button to remove the filters
+        Button removeFilterButton = new Button("Remove Filters");
+        removeFilterButton .setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        removeFilterButton.setStyle("-fx-background-color: #ca072f; -fx-text-fill: white; -fx-background-radius: 5;");
+
+
+        // Add a search field for account number
+        Label accountSearchLabel = new Label("Search by Account Number:");
+        TextField accountSearchInput = new TextField();
+        accountSearchInput.setPromptText("Enter account number");
+        Button accountSearchButton = new Button("Search");
+
+        // Property information panel
+        VBox propertyInfoPanel = new VBox(10);
+        propertyInfoPanel.setPadding(new Insets(15));
+        propertyInfoPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        Label propertyInfoLabel = new Label("Property Information:");
+        propertyInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        propertyInfoLabel.setStyle("-fx-text-fill: #2b5b84;");
+        TextArea propertyInfoArea = new TextArea();
+        propertyInfoArea.setEditable(false);
+        propertyInfoArea.setWrapText(true);
+        propertyInfoPanel.getChildren().addAll(propertyInfoLabel, propertyInfoArea);
+
         // Add elements to filter panel
-        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton);
+        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton, propertyInfoPanel, removeFilterButton);
 
         // Wrap the filter panel in a StackPane to position it
         StackPane filterContainer = new StackPane(filterPanel);
@@ -134,6 +165,29 @@ public class App extends Application {
         // Position the filter panel to the top-left corner
         StackPane.setMargin(filterPanel, new Insets(10, 0, 0, 10));
         borderPane.setLeft(filterContainer);
+
+
+        // Add functionality to Account Search button
+
+        accountSearchButton.setOnAction(event -> {
+            String accountNumber = accountSearchInput.getText().trim();
+            if (accountNumber.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please enter an account number.", ButtonType.OK);
+                alert.showAndWait();
+                return;
+            }
+            PropertyAssessment property = propertiesClass.getProperties().stream()
+                    .filter(p -> Integer.toString(p.getAccountID()).equalsIgnoreCase(accountNumber))
+                    .findFirst()
+                    .orElse(null);
+            if (property == null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
+                alert.showAndWait();
+            } else {
+                displayPropertyInfo(property, propertyInfoArea);
+                highlightSelectedProperty(property);
+            }
+        });
 
 
         // Add functionality to the filter button
@@ -164,25 +218,112 @@ public class App extends Application {
             }
 
             // Update the map with filtered properties
-            updateMapWithFilteredProperties(filteredProperties, symbol);
+            updateMapWithFilteredProperties(filteredProperties);
         });
+
+
+        //Add functionality to remove filters button
+        removeFilterButton.setOnAction(event ->{
+
+            graphicsOverlay.getGraphics().clear();
+            addPropertiesToMap(propertiesClass.getProperties());
+
+            mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+
+        });
+
+
     }
 
-    private void addPropertiesToMap(List<PropertyAssessment> properties, SimpleMarkerSymbol symbol) {
+    private Color getAssesmentColor(long assessedValue){
+
+        if (assessedValue < 50000){
+            return Color.DARKBLUE;
+
+        }
+        else if (assessedValue < 100000) {
+            return Color.BLUE;
+        }
+
+        else if (assessedValue < 200000) {
+            return Color.YELLOW;
+        }
+        else if (assessedValue < 500000) {
+            return Color.ORANGE;
+        }
+        else if (assessedValue < 1000000) {
+            return Color.RED;
+        }
+        else {
+            return Color.DARKRED;
+        }
+
+
+    }
+
+    // Display property information
+    private void displayPropertyInfo(PropertyAssessment property, TextArea propertyInfoArea) {
+        if (property == null) {
+            propertyInfoArea.setText("No property information available.");
+        } else {
+
+            //For formatting assessed value into a currency
+            DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+            propertyInfoArea.setText(String.format(
+                            "Account Number: %s%n" +
+                            "Address: %s%n%n" +
+                            "Garage: %s%n%n"  +
+                            "Assessment Value: $%s %n%n" +
+                            "Neighborhood: %s%n%n" +
+                            "Assessment Class: %s%n%n" +
+                            "Latitude: %f%n" +
+                            "Longitude %f%n",
+                    property.getAccountID(),
+                    property.getAddress(),
+                    property.getGarage(),
+                    numberFormat.format(property.getAssessedValue()),
+                    property.getNeighborhood().getNeighborhoodName(),
+                    property.getAssessmentClass(),
+                    property.getLocation().getLat(),
+                    property.getLocation().getLng()
+            ));
+        }
+    }
+
+
+    // Highlight selected property
+    private void highlightSelectedProperty(PropertyAssessment property) {
+//        graphicsOverlay.getGraphics().clear();
+        SimpleMarkerSymbol selectedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
+        Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+        Graphic highlightedGraphic = new Graphic(point, selectedSymbol);
+        graphicsOverlay.getGraphics().add(highlightedGraphic);
+
+        // Center the map on the Highlighted property
+        mapView.setViewpointCenterAsync(point, 10000);
+
+    }
+
+    private void addPropertiesToMap(List<PropertyAssessment> properties) {
         for (PropertyAssessment property : properties) {
+
+            Color color = getAssesmentColor(property.getAssessedValue());
+            SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
+
             Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
             Graphic graphic = new Graphic(point, symbol);
             graphicsOverlay.getGraphics().add(graphic);
         }
     }
 
-    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties, SimpleMarkerSymbol symbol) {
+    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
         graphicsOverlay.getGraphics().clear();
         if (filteredProperties.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties match the filter criteria.", ButtonType.OK);
             alert.showAndWait();
         } else {
-            addPropertiesToMap(filteredProperties, symbol);
+            addPropertiesToMap(filteredProperties);
         }
     }
 
