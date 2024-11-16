@@ -17,13 +17,23 @@
 package com.mycompany.app;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
-import com.esri.arcgisruntime.mapping.BasemapStyle;
+import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.SpatialReference;
+import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
+import com.esri.arcgisruntime.mapping.BasemapStyle;
+import com.esri.arcgisruntime.mapping.view.Graphic;
+import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.util.List;
 
 public class App extends Application {
 
@@ -64,6 +74,33 @@ public class App extends Application {
 
         // display the map by setting the map on the map view
         mapView.setMap(map);
+
+        GraphicsOverlay m_graphicsOverlay = new GraphicsOverlay();
+        mapView.getGraphicsOverlays().add(m_graphicsOverlay);
+
+        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 10);
+
+        PropertyAssessments propertiesClass = null;
+        try {
+            propertiesClass = new PropertyAssessments("Property_Assessment_Data_2024.csv");
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+
+        List<PropertyAssessment> properties = propertiesClass.getProperties();
+
+
+//        Point viewPoint = new Point(properties.get(0).getLocation().getLng(), properties.get(0).getLocation().getLat(), SpatialReferences.getWgs84());
+        Point viewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+        mapView.setViewpointCenterAsync(viewPoint, 15000);
+        for (PropertyAssessment property : properties) {
+            Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+            Graphic graphic = new Graphic(point, symbol);
+            m_graphicsOverlay.getGraphics().add(graphic);
+        }
+
+//        stackPane.getChildren().add(mapView);
     }
 
     /**
