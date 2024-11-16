@@ -86,8 +86,6 @@ public class App extends Application {
 
         mapView.getGraphicsOverlays().add(graphicsOverlay);
 
-        // Create a symbol for the graphics
-        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.BLUE, 20);
 
         // Load property data
         final PropertyAssessments propertiesClass;
@@ -104,7 +102,7 @@ public class App extends Application {
         mapView.setViewpointCenterAsync(viewPoint, 15000);
 
         // Add all properties to the map initially
-        addPropertiesToMap(propertiesClass.getProperties(), symbol);
+        addPropertiesToMap(propertiesClass.getProperties());
 
 
         // Create a filter panel using VBox
@@ -172,25 +170,56 @@ public class App extends Application {
             }
 
             // Update the map with filtered properties
-            updateMapWithFilteredProperties(filteredProperties, symbol);
+            updateMapWithFilteredProperties(filteredProperties);
         });
     }
 
-    private void addPropertiesToMap(List<PropertyAssessment> properties, SimpleMarkerSymbol symbol) {
+    private Color getAssesmentColor(long assessedValue){
+
+        if (assessedValue < 50000){
+            return Color.DARKBLUE;
+
+        }
+        else if (assessedValue < 100000) {
+            return Color.BLUE;
+        }
+
+        else if (assessedValue < 200000) {
+            return Color.YELLOW;
+        }
+        else if (assessedValue < 500000) {
+            return Color.ORANGE;
+        }
+        else if (assessedValue < 1000000) {
+            return Color.RED;
+        }
+        else {
+            return Color.DARKRED;
+        }
+
+
+    }
+
+
+    private void addPropertiesToMap(List<PropertyAssessment> properties) {
         for (PropertyAssessment property : properties) {
+
+            Color color = getAssesmentColor(property.getAssessedValue());
+            SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
+
             Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
             Graphic graphic = new Graphic(point, symbol);
             graphicsOverlay.getGraphics().add(graphic);
         }
     }
 
-    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties, SimpleMarkerSymbol symbol) {
+    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
         graphicsOverlay.getGraphics().clear();
         if (filteredProperties.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties match the filter criteria.", ButtonType.OK);
             alert.showAndWait();
         } else {
-            addPropertiesToMap(filteredProperties, symbol);
+            addPropertiesToMap(filteredProperties);
         }
     }
 
