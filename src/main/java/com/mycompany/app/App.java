@@ -373,11 +373,11 @@ public class App extends Application {
 
             propertyInfoArea.setText("Statistics: \n" + String.format(
                             "n: %s%n" +
-                            "min: %s%n" +
-                            "max: %s%n"  +
+                            "min: $%s%n" +
+                            "max: $%s%n"  +
                             "range: $%s%n" +
-                            "mean: %s%n" +
-                            "median: %s%n",
+                            "mean: $%s%n" +
+                            "median: $%s%n",
                     propertyAssessments.getNumberOfRecords(),
                     numberFormat.format(propertyAssessments.getMinValue()),
                     numberFormat.format(propertyAssessments.getMaxValue()),
