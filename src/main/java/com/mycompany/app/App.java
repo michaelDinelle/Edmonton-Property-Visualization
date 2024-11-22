@@ -237,6 +237,10 @@ public class App extends Application {
 
     private Color getAssesmentColor(long assessedValue){
 
+        if (assessedValue == 0){
+            return Color.BLACK;
+        }
+
         if (assessedValue < 50000){
             return Color.DARKBLUE;
 
