@@ -27,6 +27,7 @@ import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -45,51 +46,65 @@ public class App extends Application {
     private MapView mapView;
     private GraphicsOverlay graphicsOverlay;
 
+    // Instance Variables
+    private PropertyAssessments propertiesClass;
+    private TextArea propertyInfoArea;
+    private Button filterButton;
+    private ComboBox<String> filterDropdown;
+    private TextField filterInput;
+    private Button removeFilterButton;
+    private Button accountSearchButton;
+    private TextField accountSearchInput;
+
     public static void main(String[] args) {
         Application.launch(args);
     }
 
     @Override
     public void start(Stage stage) {
+        // Set API key for ArcGIS
+        String yourApiKey = "AAPTxy8BH1VEsoebNVZXo8HurFJ2xCDXvFC-uJSDrIEtVkCMkq-W26QCtQCgZQipt1lUwR3Pm3yRRKbeYBv6kCefEqVXMAsnQ4rVMkNdiFC5DLtXmhx_Daydix9ND6gKSfXvNdbEQeQwWhhHluGF5DXHa496Q77CndgVM7EY_nadJd-0J9bw5HiOrqsb4as3xU5lBVtBAp2G1FB5WYInTpK_0C6_6_reJIkqqnHUoC6Ez_o.AT1_V1QXZfZZ";
+        ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+
+        // Load property data
+        // NOTE: Do this first because loading all our UI is pointless if we have no data loaded
+        loadPropertyData();
 
         // Set the title and size of the stage and show it
         stage.setTitle("My Map App");
         stage.setWidth(1000);
         stage.setHeight(800);
-        stage.show();
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
 
         // Create a JavaFX scene with a BorderPane layout
         BorderPane borderPane = new BorderPane();
         Scene scene = new Scene(borderPane);
         stage.setScene(scene);
+        stage.show();
 
-        // Set API key for ArcGIS
-        String yourApiKey = "AAPTxy8BH1VEsoebNVZXo8HurFJ2xCDXvFC-uJSDrIEtVkCMkq-W26QCtQCgZQipt1lUwR3Pm3yRRKbeYBv6kCefEqVXMAsnQ4rVMkNdiFC5DLtXmhx_Daydix9ND6gKSfXvNdbEQeQwWhhHluGF5DXHa496Q77CndgVM7EY_nadJd-0J9bw5HiOrqsb4as3xU5lBVtBAp2G1FB5WYInTpK_0C6_6_reJIkqqnHUoC6Ez_o.AT1_V1QXZfZZ";
-        ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+        // Create the mapview and graphics overlay
+        initializeMap(borderPane);
 
-        // Create a MapView to display the map
-        mapView = new MapView();
-        borderPane.setCenter(mapView);
+        // Initialize the filter panel
+        VBox filterPanel = createFilterPanel();
+        borderPane.setLeft(filterPanel);
 
-        // Create an ArcGISMap with an imagery basemap
-        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
+        // Add all properties to the map initially
+        addPropertiesToMap(propertiesClass.getProperties());
 
-        // Set the reference scale for the map
-        map.setReferenceScale(10000);
+        // Center the map on Edmonton
+        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
-        mapView.setMap(map);
+        // Add the functionality to the account search button, filter button, and remove filter button
+        accountSearchButtonFunctionality();
+        filterButtonFunctionality();
+        removeFilterButtonFunctionality(edmontonViewPoint);
+    }
 
-        // Create a graphics overlay
-        graphicsOverlay = new GraphicsOverlay();
-
-        // Enable scaling of symbols in the graphics overlay
-        graphicsOverlay.setScaleSymbols(true);
-
-        mapView.getGraphicsOverlays().add(graphicsOverlay);
-
-
+    private void loadPropertyData() {
         // Load property data
-        final PropertyAssessments propertiesClass;
         try {
             propertiesClass = new PropertyAssessments("Property_Assessment_Data_2024.csv");
         } catch (IOException e) {
@@ -97,78 +112,87 @@ public class App extends Application {
             System.exit(1);
             return; // Exit if data loading fails
         }
+    }
 
-        // Center the map on Edmonton
-        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
-        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+    private void initializeMap(BorderPane borderPane) {
+        // Create a MapView to display the map
+        mapView = new MapView();
+        // Create an ArcGISMap with an imagery basemap
+        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
+        map.setReferenceScale(10000);
+        mapView.setMap(map);
 
-        // Add all properties to the map initially
-        addPropertiesToMap(propertiesClass.getProperties());
+        // Create a graphics overlay
+        graphicsOverlay = new GraphicsOverlay();
+        // Enable scaling of symbols in the graphics overlay
+        graphicsOverlay.setScaleSymbols(true); // This will scale the map symbols when zooming in and out
+        mapView.getGraphicsOverlays().add(graphicsOverlay);
 
+        borderPane.setCenter(mapView);
+    }
 
-        // Create a filter panel using VBox
+    private VBox createFilterPanel() {
         VBox filterPanel = new VBox(10);
         filterPanel.setPadding(new Insets(15));
+        filterPanel.setAlignment(Pos.TOP_LEFT);
         filterPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        filterPanel.setPrefWidth(300);
 
-        // Filter label
-        Label filterLabel = new Label("Filter Properties:");
+        Label filterLabel = new Label("Filter Properties");
         filterLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         filterLabel.setStyle("-fx-text-fill: #2b5b84;");
 
-        // Dropdown for filtering options
-        ComboBox<String> filterDropdown = new ComboBox<>();
+        filterDropdown = new ComboBox<>();
         filterDropdown.getItems().addAll("Neighborhood", "Assessment Class");
         filterDropdown.setPromptText("Select a filter");
 
-        // Input field for filter value
-        TextField filterInput = new TextField();
-        filterInput.setPromptText("Enter filter value");
+        filterInput = new TextField();
+        filterInput.setPromptText("Enter the filter value");
 
-        // Button to apply the filter
-        Button filterButton = new Button("Apply Filter");
-        filterButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        filterButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-background-radius: 5;");
+        filterButton = createButton("Apply Filter", "#4CAF50");
+        removeFilterButton = createButton("Remove Filters", "#ca072f");
 
-        // Button to remove the filters
-        Button removeFilterButton = new Button("Remove Filters");
-        removeFilterButton .setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        removeFilterButton.setStyle("-fx-background-color: #ca072f; -fx-text-fill: white; -fx-background-radius: 5;");
-
-
-        // Add a search field for account number
         Label accountSearchLabel = new Label("Search by Account Number:");
-        TextField accountSearchInput = new TextField();
-        accountSearchInput.setPromptText("Enter account number");
-        Button accountSearchButton = new Button("Search");
+        accountSearchInput = new TextField();
+        accountSearchInput.setPromptText("Enter the account number");
+        accountSearchButton = createButton("Search", "#007ACC");
 
-        // Property information panel
-        VBox propertyInfoPanel = new VBox(10);
-        propertyInfoPanel.setPadding(new Insets(15));
-        propertyInfoPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        Label propertyInfoLabel = new Label("Property Information:");
+        Label propertyInfoLabel = new Label("Property Information");
         propertyInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         propertyInfoLabel.setStyle("-fx-text-fill: #2b5b84;");
-        TextArea propertyInfoArea = new TextArea();
+
+        propertyInfoArea = new TextArea();
         propertyInfoArea.setEditable(false);
         propertyInfoArea.setWrapText(true);
-        propertyInfoPanel.getChildren().addAll(propertyInfoLabel, propertyInfoArea);
 
-        // Add elements to filter panel
-        filterPanel.getChildren().addAll(filterLabel, new Label("Filter by:"), filterDropdown, new Label("Filter value:"), filterInput, filterButton, accountSearchLabel,accountSearchInput,accountSearchButton, propertyInfoPanel, removeFilterButton);
+//        VBox propertyInfoPanel = createPropertyInfoPanel();
 
-        // Wrap the filter panel in a StackPane to position it
-        StackPane filterContainer = new StackPane(filterPanel);
-        filterContainer.setPadding(new Insets(20));
-        filterContainer.setPrefWidth(300);
+        filterPanel.getChildren().addAll(
+                filterLabel,
+                new Label("Filter by:"),
+                filterDropdown,
+                new Label("Filter value:"),
+                filterInput,
+                filterButton,
+                accountSearchLabel,
+                accountSearchInput,
+                accountSearchButton,
+                propertyInfoLabel,
+                propertyInfoArea,
+                removeFilterButton
+        );
+        return filterPanel;
+    }
 
-        // Position the filter panel to the top-left corner
-        StackPane.setMargin(filterPanel, new Insets(10, 0, 0, 10));
-        borderPane.setLeft(filterContainer);
+    private Button createButton(String text, String backgroundColor) {
+        Button button = new Button(text);
+        button.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        button.setStyle("-fx-background-color: " + backgroundColor + "; -fx-text-fill: white; -fx-background-radius: 5;");
+        return button;
+    }
 
-
+    private void accountSearchButtonFunctionality() {
         // Add functionality to Account Search button
-
         accountSearchButton.setOnAction(event -> {
             String accountNumber = accountSearchInput.getText().trim();
             if (accountNumber.isEmpty()) {
@@ -188,8 +212,9 @@ public class App extends Application {
                 highlightSelectedProperty(property);
             }
         });
+    }
 
-
+    private void filterButtonFunctionality() {
         // Add functionality to the filter button
         filterButton.setOnAction(event -> {
             String selectedFilter = filterDropdown.getValue();
@@ -220,8 +245,9 @@ public class App extends Application {
             // Update the map with filtered properties
             updateMapWithFilteredProperties(filteredProperties);
         });
+    }
 
-
+    private void removeFilterButtonFunctionality(Point edmontonViewPoint) {
         //Add functionality to remove filters button
         removeFilterButton.setOnAction(event ->{
 
@@ -231,8 +257,6 @@ public class App extends Application {
             mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
         });
-
-
     }
 
     private Color getAssesmentColor(long assessedValue){
@@ -311,7 +335,6 @@ public class App extends Application {
 
     private void addPropertiesToMap(List<PropertyAssessment> properties) {
         for (PropertyAssessment property : properties) {
-
             Color color = getAssesmentColor(property.getAssessedValue());
             SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
 
