@@ -49,6 +49,7 @@ public class App extends Application {
     // Instance Variables
     private PropertyAssessments propertiesClass;
     private TextArea propertyInfoArea;
+    private TextArea propertyStatisticsArea;
     private Button filterButton;
     private ComboBox<String> filterDropdown;
     private TextField filterInput;
@@ -85,6 +86,10 @@ public class App extends Application {
 
         // Create the mapview and graphics overlay
         initializeMap(borderPane);
+
+        // Initialize the statistics Panel
+        VBox statisticsPanel = createStatisticsPanel();
+        borderPane.setRight(statisticsPanel);
 
         // Initialize the filter panel
         VBox filterPanel = createFilterPanel();
@@ -130,6 +135,36 @@ public class App extends Application {
 
         borderPane.setCenter(mapView);
     }
+
+    private VBox createStatisticsPanel(){
+
+        VBox statisticsPanel = new VBox(10);
+
+        statisticsPanel.setPadding(new Insets(15));
+        statisticsPanel.setAlignment(Pos.TOP_LEFT);
+        statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        statisticsPanel.setPrefWidth(300);
+
+        Label statisticsLabel = new Label("Property Group Statistics");
+        statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+
+
+        propertyStatisticsArea = new TextArea();
+        propertyStatisticsArea.setEditable(false);
+        propertyStatisticsArea.setWrapText(true);
+
+//        VBox propertyInfoPanel = createPropertyInfoPanel();
+
+        statisticsPanel.getChildren().addAll(
+                statisticsLabel,
+                propertyStatisticsArea
+        );
+        return statisticsPanel;
+
+    }
+
 
     private VBox createFilterPanel() {
         VBox filterPanel = new VBox(10);
@@ -232,10 +267,14 @@ public class App extends Application {
                 filteredProperties = propertiesClass.getProperties().stream()
                         .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
                         .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
             } else if (selectedFilter.equals("Assessment Class")) {
                 filteredProperties = propertiesClass.getProperties().stream()
                         .filter(property -> property.getAssessmentClass().toString().toLowerCase().contains(filterValue.toLowerCase()))
                         .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
                 alert.showAndWait();
@@ -318,6 +357,37 @@ public class App extends Application {
             ));
         }
     }
+
+
+    // Display property information
+    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties, TextArea propertyInfoArea) {
+
+        PropertyAssessments propertyAssessments = new PropertyAssessments(properties);
+
+        if (properties == null) {
+            propertyInfoArea.setText("No property statistics available.");
+        } else {
+
+            //For formatting assessed value into a currency
+            DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+            propertyInfoArea.setText("Statistics: \n" + String.format(
+                            "n: %s%n" +
+                            "min: $%s%n" +
+                            "max: $%s%n"  +
+                            "range: $%s%n" +
+                            "mean: $%s%n" +
+                            "median: $%s%n",
+                    propertyAssessments.getNumberOfRecords(),
+                    numberFormat.format(propertyAssessments.getMinValue()),
+                    numberFormat.format(propertyAssessments.getMaxValue()),
+                    numberFormat.format(propertyAssessments.getRange()),
+                    numberFormat.format(propertyAssessments.getMean()),
+                    numberFormat.format(propertyAssessments.getMedian())
+            ));
+        }
+    }
+
 
 
     // Highlight selected property
