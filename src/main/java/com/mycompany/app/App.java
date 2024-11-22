@@ -87,6 +87,10 @@ public class App extends Application {
         // Create the mapview and graphics overlay
         initializeMap(borderPane);
 
+        // Initialize the statistics Panel
+        VBox statisticsPanel = createStatisticsPanel();
+        borderPane.setRight(statisticsPanel);
+
         // Initialize the filter panel
         VBox filterPanel = createFilterPanel();
         borderPane.setLeft(filterPanel);
@@ -263,10 +267,14 @@ public class App extends Application {
                 filteredProperties = propertiesClass.getProperties().stream()
                         .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
                         .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
             } else if (selectedFilter.equals("Assessment Class")) {
                 filteredProperties = propertiesClass.getProperties().stream()
                         .filter(property -> property.getAssessmentClass().toString().toLowerCase().contains(filterValue.toLowerCase()))
                         .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
                 alert.showAndWait();
@@ -363,7 +371,7 @@ public class App extends Application {
             //For formatting assessed value into a currency
             DecimalFormat numberFormat = new DecimalFormat("#,###");
 
-            propertyInfoArea.setText("Statistics: %n%n" + String.format(
+            propertyInfoArea.setText("Statistics: \n" + String.format(
                             "n: %s%n" +
                             "min: %s%n" +
                             "max: %s%n"  +
