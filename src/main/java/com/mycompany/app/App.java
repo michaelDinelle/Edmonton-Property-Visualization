@@ -320,6 +320,37 @@ public class App extends Application {
     }
 
 
+    // Display property information
+    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties, TextArea propertyInfoArea) {
+
+        PropertyAssessments propertyAssessments = new PropertyAssessments(properties);
+
+        if (properties == null) {
+            propertyInfoArea.setText("No property statistics available.");
+        } else {
+
+            //For formatting assessed value into a currency
+            DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+            propertyInfoArea.setText("Statistics: %n%n" + String.format(
+                            "n: %s%n" +
+                            "min: %s%n" +
+                            "max: %s%n"  +
+                            "range: $%s%n" +
+                            "mean: %s%n" +
+                            "median: %s%n",
+                    propertyAssessments.getNumberOfRecords(),
+                    numberFormat.format(propertyAssessments.getMinValue()),
+                    numberFormat.format(propertyAssessments.getMaxValue()),
+                    numberFormat.format(propertyAssessments.getRange()),
+                    numberFormat.format(propertyAssessments.getMean()),
+                    numberFormat.format(propertyAssessments.getMedian())
+            ));
+        }
+    }
+
+
+
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
 //        graphicsOverlay.getGraphics().clear();
