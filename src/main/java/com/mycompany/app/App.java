@@ -49,6 +49,7 @@ public class App extends Application {
     // Instance Variables
     private PropertyAssessments propertiesClass;
     private TextArea propertyInfoArea;
+    private TextArea propertyStatisticsArea;
     private Button filterButton;
     private ComboBox<String> filterDropdown;
     private TextField filterInput;
@@ -130,6 +131,36 @@ public class App extends Application {
 
         borderPane.setCenter(mapView);
     }
+
+    private VBox createStatisticsPanel(){
+
+        VBox statisticsPanel = new VBox(10);
+
+        statisticsPanel.setPadding(new Insets(15));
+        statisticsPanel.setAlignment(Pos.TOP_LEFT);
+        statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        statisticsPanel.setPrefWidth(300);
+
+        Label statisticsLabel = new Label("Property Group Statistics");
+        statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+
+
+        propertyStatisticsArea = new TextArea();
+        propertyStatisticsArea.setEditable(false);
+        propertyStatisticsArea.setWrapText(true);
+
+//        VBox propertyInfoPanel = createPropertyInfoPanel();
+
+        statisticsPanel.getChildren().addAll(
+                statisticsLabel,
+                propertyStatisticsArea
+        );
+        return statisticsPanel;
+
+    }
+
 
     private VBox createFilterPanel() {
         VBox filterPanel = new VBox(10);
