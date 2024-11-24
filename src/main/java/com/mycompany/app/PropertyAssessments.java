@@ -4,9 +4,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.function.Predicate;
-import java.util.Collections;
 
 public class PropertyAssessments {
     // Instance variables, these will be accessible with each instance of the class:
@@ -178,46 +175,4 @@ public class PropertyAssessments {
     }
 
 
-    public PropertyAssessment findPropertyByAccountID(String accountID) {
-        try {
-            int parsedAccountID = Integer.parseInt(accountID);
-            return properties.stream()
-                    .filter(p -> p.getAccountID() == parsedAccountID)
-                    .findFirst()
-                    .orElse(null); // Return null if no property is found
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid account ID format: " + accountID, e);
-        }
-    }
-
-
-    public PropertyAssessments getPropertiesByNeighborhood(String neighborhood) {
-        return filterProperties(property -> property.getNeighborhood().getNeighborhoodName().equals(neighborhood),
-                "No properties found for neighborhood " + neighborhood);
-    }
-
-    public PropertyAssessments getPropertiesByAssessmentClass(String assessmentClass) {
-        return filterProperties(property -> {
-            String assessmentClass1 = property.getAssessmentClass().getAssessmentClass1();
-            String assessmentClass2 = property.getAssessmentClass().getAssessmentClass2();
-            String assessmentClass3 = property.getAssessmentClass().getAssessmentClass3();
-            return assessmentClass1.equals(assessmentClass2) ||
-                    assessmentClass3.equals(assessmentClass2) ||
-                    assessmentClass3.equals(assessmentClass1);
-                },"Sorry, can't find properties for assessment class " + assessmentClass);
-    }
-
-    private PropertyAssessments filterProperties(Predicate<PropertyAssessment> predicate, String errorMessage) {
-        List<PropertyAssessment> filteredProperties = new ArrayList<>();
-
-        properties.stream()
-                .filter(predicate)
-                .forEach(filteredProperties::add);
-
-        if (filteredProperties.isEmpty()) {
-            throw new NoSuchElementException(errorMessage);
-        }
-
-        return new PropertyAssessments(filteredProperties);
-    }
 }
