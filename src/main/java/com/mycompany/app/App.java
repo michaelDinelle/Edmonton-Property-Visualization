@@ -271,7 +271,7 @@ public class App extends Application {
         filterLabel.setStyle("-fx-text-fill: #2b5b84;");
 
         filterDropdown = new ComboBox<>();
-        filterDropdown.getItems().addAll("Neighborhood", "Assessment Class");
+        filterDropdown.getItems().addAll("Neighborhood", "Assessment Class", "Ward");
         filterDropdown.setPromptText("Select a filter");
 
         filterInput = new TextField();
@@ -349,7 +349,16 @@ public class App extends Application {
                         .collect(Collectors.toList());
 
                 displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
-            } else {
+            }
+            else if (selectedFilter.equals("Ward")) {
+                filteredProperties = propertiesClass.getProperties().stream()
+                        .filter(property -> property.getNeighborhood().getWard().toLowerCase().contains(filterValue.toLowerCase()))
+                        .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
+            }
+
+            else {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
                 alert.showAndWait();
                 return;
