@@ -49,6 +49,8 @@ public class App extends Application {
     private PropertyAssessments propertiesClass;
     private TextArea propertyInfoArea;
     private TextArea propertyStatisticsArea;
+    private TextArea assessmentClassInfoArea;
+
 
 
     public static void main(String[] args) {
@@ -126,8 +128,7 @@ public class App extends Application {
         borderPane.setCenter(mapView);
     }
 
-    private VBox createStatisticsPanel(){
-
+    private VBox createStatisticsPanel() {
         VBox statisticsPanel = new VBox(10);
 
         statisticsPanel.setPadding(new Insets(15));
@@ -135,26 +136,40 @@ public class App extends Application {
         statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
         statisticsPanel.setPrefWidth(300);
 
-        Label statisticsLabel = new Label("Property Group Statistics");
+        Label statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+        VBox legend = createLegend(); // Add the legend to the panel
+
+        // Initialize the text areas
+        propertyInfoArea = new TextArea();
+        propertyInfoArea.setEditable(false);
+        propertyInfoArea.setWrapText(true);
+        propertyInfoArea.setPromptText("Property Info");
 
         propertyStatisticsArea = new TextArea();
         propertyStatisticsArea.setEditable(false);
         propertyStatisticsArea.setWrapText(true);
+        propertyStatisticsArea.setPromptText("Neighborhood Statistics");
 
-        VBox legend = createLegend(); // Add the legend to the panel
+        assessmentClassInfoArea = new TextArea();
+        assessmentClassInfoArea.setEditable(false);
+        assessmentClassInfoArea.setWrapText(true);
+        assessmentClassInfoArea.setPromptText("Assessment Class Info");
 
-//        VBox propertyInfoPanel = createPropertyInfoPanel();
+
 
         statisticsPanel.getChildren().addAll(
+                legend,
                 statisticsLabel,
-                propertyStatisticsArea,
-                legend
+                propertyInfoArea,        // Add property info area for displaying details
+                propertyStatisticsArea,  // Add statistics area for group data
+                assessmentClassInfoArea  // Add assessment class area for a given assessment class
         );
         return statisticsPanel;
-
     }
+
 
     private VBox createLegend() {
         VBox legend = new VBox(5);
@@ -207,26 +222,106 @@ public class App extends Application {
         Accordion accordion = new Accordion();
 
         // Neighborhood filter
-        TitledPane neighborhoodPane = createFilterPane("Filter by Neighborhood", "Enter neighborhood name",
-                filterValue -> propertiesClass.getProperties().stream()
-                        .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
-                        .collect(Collectors.toList()));
+        TitledPane neighborhoodPane = createFilterPane(
+                "Filter by Neighborhood",
+                "Enter neighborhood name",
+                filterValue -> {
+                    List<PropertyAssessment> filteredProperties = propertiesClass.getProperties().stream()
+                            .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
+                            .collect(Collectors.toList());
 
-        // Assessment Class Filter
-        TitledPane assessmentClassPane = createFilterPane("Filter by Assessment Class", "Enter assessment class",
-                filterValue -> propertiesClass.getProperties().stream()
-                        .filter(property -> property.getAssessmentClass().toString().toLowerCase().contains(filterValue.toLowerCase()))
-                        .collect(Collectors.toList()));
+                    // Display neighborhood statistics
+                    if (filteredProperties.isEmpty()) {
+                        propertyStatisticsArea.setText("No properties found for the specified neighborhood.");
+                    } else {
+                        displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
+                    }
+
+                    return filteredProperties;
+                },
+                () -> {
+                    // Reset when the filter is removed
+                    propertyStatisticsArea.clear();
+                    addPropertiesToMap(propertiesClass.getProperties());
+                    propertyStatisticsArea.setText("");
+                }
+        );
+
+        // Assessment Class filter
+        TitledPane assessmentClassPane = createFilterPane(
+                "Filter by Assessment Class",
+                "Enter assessment class",
+                filterValue -> {
+                    List<PropertyAssessment> filteredProperties = propertiesClass.getProperties().stream()
+                            .filter(property -> normalizeAssessmentClass(property.getAssessmentClass())
+                                    .contains(filterValue.trim().toLowerCase()))
+                            .collect(Collectors.toList());
+
+                    if (filteredProperties.isEmpty()) {
+                        assessmentClassInfoArea.setText("No properties found for the specified assessment class.");
+                    } else {
+                        displayAssessmentClassInfo(filterValue, assessmentClassInfoArea);
+                    }
+
+                    return filteredProperties;
+                },
+                () -> {
+                    assessmentClassInfoArea.clear();
+                    addPropertiesToMap(propertiesClass.getProperties());
+                    assessmentClassInfoArea.setText("");
+                }
+        );
+
+
+
 
         // Account Number Filter
-        TitledPane accountNumberPane = createAccountNumberFilterPane();
+        TitledPane accountNumberPane = createFilterPane(
+                "Filter by Account Number",
+                "Enter account number",
+                filterValue -> {
+                    try {
+                        // Find the property by account number
+                        PropertyAssessment property = propertiesClass.findPropertyByAccountID(filterValue);
+
+                        if (property == null) {
+                            propertyInfoArea.setText("No property found with the given account number.");
+                            return List.of();
+                        } else {
+                            displayPropertyInfo(property, propertyInfoArea);
+                            highlightSelectedProperty(property);
+                            return List.of(property);
+                        }
+                    } catch (NumberFormatException e) {
+                        propertyInfoArea.setText("Invalid account number format. Please enter a numeric value.");
+                        return List.of();
+                    }
+                },
+                () -> {
+                    // Reset when the filter is removed
+                    propertyInfoArea.clear();
+                    addPropertiesToMap(propertiesClass.getProperties());
+                    propertyInfoArea.setText("");
+                }
+        );
 
         accordion.getPanes().addAll(neighborhoodPane, assessmentClassPane, accountNumberPane);
         return accordion;
     }
 
+    private String normalizeAssessmentClass(Object assessmentClass) {
+        if (assessmentClass == null) {
+            return "";
+        }
+        String classString = assessmentClass.toString();
+        // Remove outer brackets if they exist
+        return classString.replaceAll("\\[\\[|\\]\\]", "").toLowerCase().trim();
+    }
 
-    private TitledPane createFilterPane(String title, String prompt, java.util.function.Function<String, List<PropertyAssessment>> filterFunction) {
+
+    private TitledPane createFilterPane(String title, String prompt,
+                                        java.util.function.Function<String, List<PropertyAssessment>> filterFunction,
+                                        Runnable removeFilterAction) {
         TitledPane pane = new TitledPane();
         pane.setText(title);
 
@@ -237,6 +332,7 @@ public class App extends Application {
         input.setPromptText(prompt);
 
         Button applyButton = new Button("Apply Filter");
+        applyButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;"); // Green button
         applyButton.setOnAction(event -> {
             String filterValue = input.getText().trim();
             if (filterValue.isEmpty()) {
@@ -249,53 +345,20 @@ public class App extends Application {
             updateMapWithFilteredProperties(filteredProperties);
         });
 
-        box.getChildren().addAll(input, applyButton);
-        pane.setContent(box);
-        return pane;
-    }
-
-    private TitledPane createAccountNumberFilterPane() {
-        TitledPane pane = new TitledPane();
-        pane.setText("Filter by Account Number");
-
-        VBox box = new VBox(10);
-        box.setPadding(new Insets(10));
-
-        TextField accountInput = new TextField();
-        accountInput.setPromptText("Enter account number");
-
-        Button applyButton = new Button("Search");
-        applyButton.setOnAction(event -> {
-            String accountNumber = accountInput.getText().trim();
-            if (accountNumber.isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Please enter an account number.", ButtonType.OK);
-                alert.showAndWait();
-                return;
-            }
-
-            try {
-                // Use findPropertyByAccountID to locate the property
-                PropertyAssessment property = propertiesClass.findPropertyByAccountID(accountNumber);
-
-                if (property == null) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
-                    alert.showAndWait();
-                } else {
-                    System.out.println("Property Found: " + property);
-                    // Highlight and display statistics for the selected property
-                    displayPropertyStatisticsInfo(List.of(property), propertyStatisticsArea);
-                    highlightSelectedProperty(property);
-                }
-            } catch (NumberFormatException e) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid account number format. Please enter a numeric value.", ButtonType.OK);
-                alert.showAndWait();
-            }
+        // Add Remove Filter Button
+        Button removeFilterButton = new Button("Remove Filter");
+        removeFilterButton.setStyle("-fx-background-color: #F44336; -fx-text-fill: white;"); // Red button
+        removeFilterButton.setOnAction(event -> {
+            input.clear();
+            removeFilterAction.run(); // Execute the custom reset logic
         });
 
-        box.getChildren().addAll(accountInput, applyButton);
+        box.getChildren().addAll(input, applyButton, removeFilterButton);
         pane.setContent(box);
         return pane;
     }
+
+
 
 
 
@@ -389,6 +452,39 @@ public class App extends Application {
                     numberFormat.format(propertyAssessments.getMedian())
             ));
         }
+    }
+
+    // Display assessment class information
+    private void displayAssessmentClassInfo(String assessmentClass, TextArea propertyStatisticsArea) {
+        List<PropertyAssessment> propertiesInClass = propertiesClass.getProperties().stream()
+                .filter(property -> normalizeAssessmentClass(property.getAssessmentClass())
+                        .contains(assessmentClass.trim().toLowerCase()))
+                .collect(Collectors.toList());
+
+        if (propertiesInClass.isEmpty()) {
+            propertyStatisticsArea.setText("No properties found in the specified assessment class.");
+            return;
+        }
+
+        PropertyAssessments classAssessments = new PropertyAssessments(propertiesInClass);
+
+        DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+        String stats = String.format(
+                "Assessment Class: %s%n" +
+                        "There are %s %s properties in Edmonton.%n" +
+                        "The min value is CAD %s.%n" +
+                        "The max value is CAD %s.",
+                assessmentClass, // First %s
+                numberFormat.format(classAssessments.getNumberOfRecords()), // Formatted total number of properties
+                assessmentClass, // Second %s for repeating the assessment class
+                numberFormat.format(classAssessments.getMinValue()), // Formatted minimum value
+                numberFormat.format(classAssessments.getMaxValue())  // Formatted maximum value
+        );
+
+
+
+        propertyStatisticsArea.setText(stats);
     }
 
 
