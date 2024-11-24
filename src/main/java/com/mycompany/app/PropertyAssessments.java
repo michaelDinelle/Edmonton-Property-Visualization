@@ -2,10 +2,11 @@ package com.mycompany.app;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
+import java.util.Collections;
 
 public class PropertyAssessments {
     // Instance variables, these will be accessible with each instance of the class:
@@ -156,31 +157,39 @@ public class PropertyAssessments {
     }
 
     public long getMedian() {
-        int size = properties.size();
-        Collections.sort(properties);
+        // Create a mutable list of assessed values
+        List<Long> assessedValues = properties.stream()
+                .map(PropertyAssessment::getAssessedValue)
+                .sorted() // Sort the values
+                .collect(Collectors.toList());
+
+        int size = assessedValues.size();
+        if (size == 0) {
+            throw new IllegalStateException("No properties available to calculate median.");
+        }
 
         if (size % 2 == 0) {
             // For even-sized lists, take the average of the two middle elements
-            return (properties.get(size / 2).getAssessedValue() + properties.get(size / 2 - 1).getAssessedValue()) / 2;
+            return (assessedValues.get(size / 2) + assessedValues.get(size / 2 - 1)) / 2;
         } else {
             // For odd-sized lists, take the middle element
-            return properties.get(size / 2).getAssessedValue();
+            return assessedValues.get(size / 2);
         }
     }
+
 
     public PropertyAssessment findPropertyByAccountID(String accountID) {
-        int parsedAccountID = parseInt(accountID);
-        if (parsedAccountID == -1) {
-            throw new IllegalArgumentException("Invalid account ID " + accountID);
+        try {
+            int parsedAccountID = Integer.parseInt(accountID);
+            return properties.stream()
+                    .filter(p -> p.getAccountID() == parsedAccountID)
+                    .findFirst()
+                    .orElse(null); // Return null if no property is found
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid account ID format: " + accountID, e);
         }
-
-        for (PropertyAssessment property : properties) {
-            if (property.getAccountID() == parsedAccountID) {
-                return property;
-            }
-        }
-        throw new NoSuchElementException("No account with id " + accountID + " found.");
     }
+
 
     public PropertyAssessments getPropertiesByNeighborhood(String neighborhood) {
         return filterProperties(property -> property.getNeighborhood().getNeighborhoodName().equals(neighborhood),
