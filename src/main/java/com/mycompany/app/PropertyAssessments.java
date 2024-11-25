@@ -2,10 +2,8 @@ package com.mycompany.app;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 
 public class PropertyAssessments {
     // Instance variables, these will be accessible with each instance of the class:
@@ -156,59 +154,25 @@ public class PropertyAssessments {
     }
 
     public long getMedian() {
-        int size = properties.size();
-        Collections.sort(properties);
+        // Create a mutable list of assessed values
+        List<Long> assessedValues = properties.stream()
+                .map(PropertyAssessment::getAssessedValue)
+                .sorted() // Sort the values
+                .collect(Collectors.toList());
+
+        int size = assessedValues.size();
+        if (size == 0) {
+            throw new IllegalStateException("No properties available to calculate median.");
+        }
 
         if (size % 2 == 0) {
             // For even-sized lists, take the average of the two middle elements
-            return (properties.get(size / 2).getAssessedValue() + properties.get(size / 2 - 1).getAssessedValue()) / 2;
+            return (assessedValues.get(size / 2) + assessedValues.get(size / 2 - 1)) / 2;
         } else {
             // For odd-sized lists, take the middle element
-            return properties.get(size / 2).getAssessedValue();
+            return assessedValues.get(size / 2);
         }
     }
 
-    public PropertyAssessment findPropertyByAccountID(String accountID) {
-        int parsedAccountID = parseInt(accountID);
-        if (parsedAccountID == -1) {
-            throw new IllegalArgumentException("Invalid account ID " + accountID);
-        }
 
-        for (PropertyAssessment property : properties) {
-            if (property.getAccountID() == parsedAccountID) {
-                return property;
-            }
-        }
-        throw new NoSuchElementException("No account with id " + accountID + " found.");
-    }
-
-    public PropertyAssessments getPropertiesByNeighborhood(String neighborhood) {
-        return filterProperties(property -> property.getNeighborhood().getNeighborhoodName().equals(neighborhood),
-                "No properties found for neighborhood " + neighborhood);
-    }
-
-    public PropertyAssessments getPropertiesByAssessmentClass(String assessmentClass) {
-        return filterProperties(property -> {
-            String assessmentClass1 = property.getAssessmentClass().getAssessmentClass1();
-            String assessmentClass2 = property.getAssessmentClass().getAssessmentClass2();
-            String assessmentClass3 = property.getAssessmentClass().getAssessmentClass3();
-            return assessmentClass1.equals(assessmentClass2) ||
-                    assessmentClass3.equals(assessmentClass2) ||
-                    assessmentClass3.equals(assessmentClass1);
-                },"Sorry, can't find properties for assessment class " + assessmentClass);
-    }
-
-    private PropertyAssessments filterProperties(Predicate<PropertyAssessment> predicate, String errorMessage) {
-        List<PropertyAssessment> filteredProperties = new ArrayList<>();
-
-        properties.stream()
-                .filter(predicate)
-                .forEach(filteredProperties::add);
-
-        if (filteredProperties.isEmpty()) {
-            throw new NoSuchElementException(errorMessage);
-        }
-
-        return new PropertyAssessments(filteredProperties);
-    }
 }

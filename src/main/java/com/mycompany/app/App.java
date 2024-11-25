@@ -35,7 +35,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.List;
@@ -50,12 +49,19 @@ public class App extends Application {
     private PropertyAssessments propertiesClass;
     private TextArea propertyInfoArea;
     private TextArea propertyStatisticsArea;
+
+    private TitledPane propertyGroupPane;
+    private TitledPane accountNumberPane;
+
     private Button filterButton;
     private ComboBox<String> filterDropdown;
     private TextField filterInput;
+    private TextField accountSearchInput;
     private Button removeFilterButton;
     private Button accountSearchButton;
-    private TextField accountSearchInput;
+
+
+
 
     public static void main(String[] args) {
         Application.launch(args);
@@ -68,7 +74,6 @@ public class App extends Application {
         ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
 
         // Load property data
-        // NOTE: Do this first because loading all our UI is pointless if we have no data loaded
         loadPropertyData();
 
         // Set the title and size of the stage and show it
@@ -84,16 +89,26 @@ public class App extends Application {
         stage.setScene(scene);
         stage.show();
 
-        // Create the mapview and graphics overlay
-        initializeMap(borderPane);
+        // Initialize the accordion filter panel and set it to the left
+        Accordion accordionFilterPanel = createAccordionFilterPanel();
 
         // Initialize the statistics Panel
         VBox statisticsPanel = createStatisticsPanel();
         borderPane.setRight(statisticsPanel);
 
-        // Initialize the filter panel
-        VBox filterPanel = createFilterPanel();
-        borderPane.setLeft(filterPanel);
+        //Add Buttons to Accordion sub panels
+        addButtonsToPropertyGroupPane();
+        addButtonsToAccountNumberPane();
+
+        borderPane.setLeft(accordionFilterPanel);
+
+        //Add Button Functionality
+        accountSearchButtonFunctionality();
+        filterButtonFunctionality();
+        removeFilterButtonFunctionality();
+
+        // Create the mapview and graphics overlay
+        initializeMap(borderPane);
 
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
@@ -102,10 +117,6 @@ public class App extends Application {
         Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
         mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
-        // Add the functionality to the account search button, filter button, and remove filter button
-        accountSearchButtonFunctionality();
-        filterButtonFunctionality();
-        removeFilterButtonFunctionality(edmontonViewPoint);
     }
 
     private void loadPropertyData() {
@@ -136,8 +147,7 @@ public class App extends Application {
         borderPane.setCenter(mapView);
     }
 
-    private VBox createStatisticsPanel(){
-
+    private VBox createStatisticsPanel() {
         VBox statisticsPanel = new VBox(10);
 
         statisticsPanel.setPadding(new Insets(15));
@@ -145,78 +155,104 @@ public class App extends Application {
         statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
         statisticsPanel.setPrefWidth(300);
 
-        Label statisticsLabel = new Label("Property Group Statistics");
+        Label statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
 
+        VBox legend = createLegend(); // Add the legend to the panel
 
+        // Initialize the text areas
+        propertyInfoArea = new TextArea();
+        propertyInfoArea.setEditable(false);
+        propertyInfoArea.setWrapText(true);
+        propertyInfoArea.setPromptText("Property Info");
 
         propertyStatisticsArea = new TextArea();
         propertyStatisticsArea.setEditable(false);
         propertyStatisticsArea.setWrapText(true);
+        propertyStatisticsArea.setPromptText("Property Group Statistics");
 
-//        VBox propertyInfoPanel = createPropertyInfoPanel();
+
 
         statisticsPanel.getChildren().addAll(
+                legend,
                 statisticsLabel,
-                propertyStatisticsArea
+                propertyInfoArea,        // Add property info area for displaying details
+                propertyStatisticsArea  // Add statistics area for group data
         );
         return statisticsPanel;
-
     }
 
 
-    private VBox createFilterPanel() {
-        VBox filterPanel = new VBox(10);
-        filterPanel.setPadding(new Insets(15));
-        filterPanel.setAlignment(Pos.TOP_LEFT);
-        filterPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        filterPanel.setPrefWidth(300);
+    private VBox createLegend() {
+        VBox legend = new VBox(5);
+        legend.setPadding(new Insets(10));
+        legend.setStyle("-fx-background-color: rgba(240, 240, 240, 0.8); -fx-background-radius: 5;");
+        legend.setAlignment(Pos.TOP_LEFT);
 
-        Label filterLabel = new Label("Filter Properties");
-        filterLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        filterLabel.setStyle("-fx-text-fill: #2b5b84;");
+        Label legendLabel = new Label("Legend:");
+        legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        legendLabel.setStyle("-fx-text-fill: #2b5b84;");
 
-        filterDropdown = new ComboBox<>();
-        filterDropdown.getItems().addAll("Neighborhood", "Assessment Class");
-        filterDropdown.setPromptText("Select a filter");
-
-        filterInput = new TextField();
-        filterInput.setPromptText("Enter the filter value");
-
-        filterButton = createButton("Apply Filter", "#4CAF50");
-        removeFilterButton = createButton("Remove Filters", "#ca072f");
-
-        Label accountSearchLabel = new Label("Search by Account Number:");
-        accountSearchInput = new TextField();
-        accountSearchInput.setPromptText("Enter the account number");
-        accountSearchButton = createButton("Search", "#007ACC");
-
-        Label propertyInfoLabel = new Label("Property Information");
-        propertyInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        propertyInfoLabel.setStyle("-fx-text-fill: #2b5b84;");
-
-        propertyInfoArea = new TextArea();
-        propertyInfoArea.setEditable(false);
-        propertyInfoArea.setWrapText(true);
-
-//        VBox propertyInfoPanel = createPropertyInfoPanel();
-
-        filterPanel.getChildren().addAll(
-                filterLabel,
-                new Label("Filter by:"),
-                filterDropdown,
-                new Label("Filter value:"),
-                filterInput,
-                filterButton,
-                accountSearchLabel,
-                accountSearchInput,
-                accountSearchButton,
-                propertyInfoLabel,
-                propertyInfoArea,
-                removeFilterButton
+        // Define legend items
+        legend.getChildren().addAll(
+                createLegendItem("Zero Value", Color.BLACK),
+                createLegendItem("Below $50,000", Color.DARKBLUE),
+                createLegendItem("$50,000 - $200,000", Color.BLUE),
+                createLegendItem("$200,000 - $500,000", Color.YELLOW),
+                createLegendItem("$500,000 - $1,000,000", Color.ORANGE),
+                createLegendItem("$1,000,000 - $5,000,000", Color.RED),
+                createLegendItem("Above $5,000,000", Color.DARKRED)
         );
-        return filterPanel;
+
+        return legend;
+    }
+
+    private HBox createLegendItem(String labelText, Color color) {
+        HBox legendItem = new HBox(5);
+        legendItem.setAlignment(Pos.CENTER_LEFT);
+
+        Label colorBox = new Label();
+        colorBox.setPrefSize(15, 15);
+        colorBox.setStyle("-fx-background-color: " + toHexString(color) + "; -fx-border-color: black;");
+
+        Label label = new Label(labelText);
+        label.setFont(Font.font("Arial", 12));
+
+        legendItem.getChildren().addAll(colorBox, label);
+        return legendItem;
+    }
+
+    private String toHexString(Color color) {
+        return String.format("#%02x%02x%02x",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+    }
+
+
+
+    private Accordion createAccordionFilterPanel() {
+        Accordion accordion = new Accordion();
+
+        // Neighborhood filter
+        propertyGroupPane = new TitledPane();
+        propertyGroupPane.setText("Property Group Search");
+        propertyGroupPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        propertyGroupPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        propertyGroupPane.setStyle("-fx-text-fill: #2b5b84;");
+
+        // Account Number Filter
+        accountNumberPane = new TitledPane();
+        accountNumberPane.setText("Account Search");
+        accountNumberPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        accountNumberPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        accountNumberPane.setStyle("-fx-text-fill: #2b5b84;");
+
+
+
+        accordion.getPanes().addAll(propertyGroupPane, accountNumberPane);
+        return accordion;
     }
 
     private Button createButton(String text, String backgroundColor) {
@@ -225,6 +261,44 @@ public class App extends Application {
         button.setStyle("-fx-background-color: " + backgroundColor + "; -fx-text-fill: white; -fx-background-radius: 5;");
         return button;
     }
+
+
+    private void addButtonsToPropertyGroupPane(){
+        VBox propertyGroupContent = new VBox(10);
+
+        Label filterLabel = new Label("Filter Properties");
+        filterLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        filterLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+        filterDropdown = new ComboBox<>();
+        filterDropdown.getItems().addAll("Neighborhood", "Assessment Class", "Ward");
+        filterDropdown.setPromptText("Select a filter");
+
+        filterInput = new TextField();
+        filterInput.setPromptText("Enter the filter value");
+        filterButton = createButton("Apply Filter", "#4CAF50");
+
+        removeFilterButton = createButton("Remove Filters", "#ca072f");
+
+        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, filterInput, filterButton, removeFilterButton);
+
+        propertyGroupPane.setContent(propertyGroupContent);
+
+    }
+
+    private void addButtonsToAccountNumberPane(){
+        VBox accountGroupContent = new VBox(10);
+        Label accountSearchLabel = new Label("Search by Account Number:");
+
+        accountSearchInput = new TextField();
+        accountSearchInput.setPromptText("Enter the account number");
+        accountSearchButton = createButton("Search", "#007ACC");
+
+        accountGroupContent.getChildren().addAll(accountSearchLabel, accountSearchInput, accountSearchButton);
+        accountNumberPane.setContent(accountGroupContent);
+
+    }
+
 
     private void accountSearchButtonFunctionality() {
         // Add functionality to Account Search button
@@ -268,14 +342,23 @@ public class App extends Application {
                         .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
                         .collect(Collectors.toList());
 
-                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
             } else if (selectedFilter.equals("Assessment Class")) {
                 filteredProperties = propertiesClass.getProperties().stream()
                         .filter(property -> property.getAssessmentClass().toString().toLowerCase().contains(filterValue.toLowerCase()))
                         .collect(Collectors.toList());
 
-                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea);
-            } else {
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
+            }
+            else if (selectedFilter.equals("Ward")) {
+                filteredProperties = propertiesClass.getProperties().stream()
+                        .filter(property -> property.getNeighborhood().getWard().toLowerCase().contains(filterValue.toLowerCase()))
+                        .collect(Collectors.toList());
+
+                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
+            }
+
+            else {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
                 alert.showAndWait();
                 return;
@@ -286,16 +369,22 @@ public class App extends Application {
         });
     }
 
-    private void removeFilterButtonFunctionality(Point edmontonViewPoint) {
+    private void removeFilterButtonFunctionality() {
         //Add functionality to remove filters button
         removeFilterButton.setOnAction(event ->{
 
             graphicsOverlay.getGraphics().clear();
             addPropertiesToMap(propertiesClass.getProperties());
-
+            Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
             mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
 
         });
+    }
+
+
+    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
+        graphicsOverlay.getGraphics().clear();
+        addPropertiesToMap(filteredProperties);
     }
 
     private Color getAssesmentColor(long assessedValue){
@@ -308,24 +397,20 @@ public class App extends Application {
             return Color.DARKBLUE;
 
         }
-        else if (assessedValue < 100000) {
+        else if (assessedValue < 200000) {
             return Color.BLUE;
         }
-
-        else if (assessedValue < 200000) {
+        else if (assessedValue < 500000) {
             return Color.YELLOW;
         }
-        else if (assessedValue < 500000) {
+        else if (assessedValue < 1000000) {
             return Color.ORANGE;
         }
-        else if (assessedValue < 1000000) {
+        else if (assessedValue < 50000000)  {
             return Color.RED;
-        }
-        else {
+        } else {
             return Color.DARKRED;
         }
-
-
     }
 
     // Display property information
@@ -360,7 +445,7 @@ public class App extends Application {
 
 
     // Display property information
-    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties, TextArea propertyInfoArea) {
+    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties, TextArea propertyInfoArea, String filterValue) {
 
         PropertyAssessments propertyAssessments = new PropertyAssessments(properties);
 
@@ -371,7 +456,7 @@ public class App extends Application {
             //For formatting assessed value into a currency
             DecimalFormat numberFormat = new DecimalFormat("#,###");
 
-            propertyInfoArea.setText("Statistics: \n" + String.format(
+            propertyInfoArea.setText("Statistics: " + filterValue + "\n" + String.format(
                             "n: %s%n" +
                             "min: $%s%n" +
                             "max: $%s%n"  +
@@ -392,14 +477,30 @@ public class App extends Application {
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
-//        graphicsOverlay.getGraphics().clear();
+
+        // Clear all graphics prior to highlighting
+        graphicsOverlay.getGraphics().clear();
+
+        // Highlight the selected property
         SimpleMarkerSymbol selectedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
         Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+        // Center the map on the Highlighted property
+        mapView.setViewpointCenterAsync(point, 3000);
+
         Graphic highlightedGraphic = new Graphic(point, selectedSymbol);
         graphicsOverlay.getGraphics().add(highlightedGraphic);
 
-        // Center the map on the Highlighted property
-        mapView.setViewpointCenterAsync(point, 10000);
+        // Fade surrounding properties by adding semi-transparent markers
+        propertiesClass.getProperties().stream()
+                .filter(otherProperty -> otherProperty != property) // Exclude the selected property
+                .forEach(otherProperty -> {
+                    Color fadedColor = getAssesmentColor(otherProperty.getAssessedValue()).deriveColor(0, 1, 1, 0.3); // Reduce opacity
+                    SimpleMarkerSymbol fadedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, fadedColor, 15);
+                    Point fadedPoint = new Point(otherProperty.getLocation().getLng(), otherProperty.getLocation().getLat(), SpatialReferences.getWgs84());
+                    Graphic fadedGraphic = new Graphic(fadedPoint, fadedSymbol);
+                    graphicsOverlay.getGraphics().add(fadedGraphic);
+                });
+
 
     }
 
@@ -414,15 +515,7 @@ public class App extends Application {
         }
     }
 
-    private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
-        graphicsOverlay.getGraphics().clear();
-        if (filteredProperties.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties match the filter criteria.", ButtonType.OK);
-            alert.showAndWait();
-        } else {
-            addPropertiesToMap(filteredProperties);
-        }
-    }
+
 
     @Override
     public void stop() {
