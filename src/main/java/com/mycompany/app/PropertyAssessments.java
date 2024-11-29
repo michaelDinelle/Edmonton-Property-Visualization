@@ -2,6 +2,7 @@ package com.mycompany.app;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.List;
 
@@ -9,6 +10,7 @@ public class PropertyAssessments {
     // Instance variables, these will be accessible with each instance of the class:
     private final String fileName;
     private List<PropertyAssessment> properties = new ArrayList<>();
+    private Map<Integer, PropertyAssessment> propertyMap;
 
     // Constructor:
     // Creates a new instance of the class with a given fileName and loads the data
@@ -40,6 +42,9 @@ public class PropertyAssessments {
             String[] CSVTokens = line.split(",", -1);
             addProperty(CSVTokens);
         }
+
+        propertyMap = properties.stream()
+                .collect(Collectors.toMap(PropertyAssessment::getAccountID, property -> property));
     }
 
     private String checkFile(String fileName) throws FileNotFoundException {
@@ -85,6 +90,10 @@ public class PropertyAssessments {
 
         PropertyAssessment newProperty = new PropertyAssessment(accountID, newAddress, garage, newNeighborhood, assessedValue, newLocation, newAssessmentClass);
         properties.add(newProperty);
+
+        if (propertyMap != null) {
+            propertyMap.put(accountID, newProperty);
+        }
     }
 
     private int parseInt(String value) {
@@ -174,5 +183,7 @@ public class PropertyAssessments {
         }
     }
 
-
+    public PropertyAssessment getPropertyByAccountID(int accountID) {
+        return propertyMap.get(accountID);
+    }
 }
