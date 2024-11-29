@@ -26,6 +26,7 @@ import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
+import javafx.beans.property.Property;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -37,6 +38,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,7 +57,7 @@ public class App extends Application {
 
     private Button filterButton;
     private ComboBox<String> filterDropdown;
-    private TextField filterInput;
+    private ComboBox<String> valueDropdown;
     private TextField accountSearchInput;
     private Button removeFilterButton;
     private Button accountSearchButton;
@@ -274,14 +276,19 @@ public class App extends Application {
         filterDropdown.getItems().addAll("Neighborhood", "Assessment Class", "Ward");
         filterDropdown.setPromptText("Select a filter");
 
-        filterInput = new TextField();
-        filterInput.setPromptText("Enter the filter value");
+        valueDropdown = new ComboBox<>();
+            valueDropdown.setPromptText("Select a value");
+
+            filterDropdown.setOnAction(event -> {
+                String selectedFilter = filterDropdown.getValue();
+                populateValues(selectedFilter);
+        });
+
         filterButton = createButton("Apply Filter", "#4CAF50");
 
         removeFilterButton = createButton("Remove Filters", "#ca072f");
 
-        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, filterInput, filterButton, removeFilterButton);
-
+        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, filterButton, removeFilterButton);
         propertyGroupPane.setContent(propertyGroupContent);
 
     }
@@ -297,6 +304,41 @@ public class App extends Application {
         accountGroupContent.getChildren().addAll(accountSearchLabel, accountSearchInput, accountSearchButton);
         accountNumberPane.setContent(accountGroupContent);
 
+    }
+
+    private void populateValues(String selectedFilter) {
+        valueDropdown.getItems().clear();
+
+        switch (selectedFilter) {
+            case "Neighborhood" -> {
+                List<String> neighborhoods = propertiesClass.getProperties().stream()
+                        .map(p -> p.getNeighborhood().getNeighborhoodName())
+                        .sorted()
+                        .distinct()
+                        .collect(Collectors.toList());
+                valueDropdown.getItems().addAll(neighborhoods);
+
+            }
+            case "Ward" -> {
+                List<String> wards = propertiesClass.getProperties().stream()
+                        .map(p -> p.getNeighborhood().getWard())
+                        .sorted()
+                        .distinct()
+                        .collect(Collectors.toList());
+                valueDropdown.getItems().addAll(wards);
+            }
+            case "Assessment Class" -> {
+                List<String> assessmentClasses = propertiesClass.getProperties().stream()
+                        //.flatMap(p -> Stream.of(p.getAssessmentClass().getAssessmentClass1(), p.getAssessmentClass().getAssessmentClass2()))
+                        // .map(p -> p.getAssessmentClass().getAssessmentClass2())
+                        .map(p -> Arrays.asList(p.getAssessmentClass().getAssessmentClass1(), p.getAssessmentClass().getAssessmentClass2()))
+                        .flatMap(List::stream)
+                        .sorted()
+                        .distinct()
+                        .collect(Collectors.toList());
+                valueDropdown.getItems().addAll(assessmentClasses);
+            }
+        }
     }
 
 
@@ -327,7 +369,7 @@ public class App extends Application {
         // Add functionality to the filter button
         filterButton.setOnAction(event -> {
             String selectedFilter = filterDropdown.getValue();
-            String filterValue = filterInput.getText().trim();
+            String filterValue = valueDropdown.getValue();
 
             if (selectedFilter == null || filterValue.isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a filter and enter a value.", ButtonType.OK);
@@ -339,20 +381,20 @@ public class App extends Application {
 
             if (selectedFilter.equals("Neighborhood")) {
                 filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getNeighborhood().getNeighborhoodName().equalsIgnoreCase(filterValue))
+                        .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
                         .collect(Collectors.toList());
 
                 displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
             } else if (selectedFilter.equals("Assessment Class")) {
                 filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getAssessmentClass().toString().toLowerCase().contains(filterValue.toLowerCase()))
+                        .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
                         .collect(Collectors.toList());
 
                 displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
             }
             else if (selectedFilter.equals("Ward")) {
                 filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getNeighborhood().getWard().toLowerCase().contains(filterValue.toLowerCase()))
+                        .filter(property -> property.getNeighborhood().getWard().contains(filterValue))
                         .collect(Collectors.toList());
 
                 displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
