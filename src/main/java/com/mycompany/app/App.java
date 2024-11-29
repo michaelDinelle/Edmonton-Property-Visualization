@@ -27,6 +27,8 @@ import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.beans.property.Property;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -39,6 +41,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,6 +64,8 @@ public class App extends Application {
     private TextField accountSearchInput;
     private Button removeFilterButton;
     private Button accountSearchButton;
+
+    private VBox statisticsPanel;
 
 
 
@@ -150,7 +155,7 @@ public class App extends Application {
     }
 
     private VBox createStatisticsPanel() {
-        VBox statisticsPanel = new VBox(10);
+        statisticsPanel = new VBox(10);
 
         statisticsPanel.setPadding(new Insets(15));
         statisticsPanel.setAlignment(Pos.TOP_LEFT);
@@ -345,22 +350,26 @@ public class App extends Application {
     private void accountSearchButtonFunctionality() {
         // Add functionality to Account Search button
         accountSearchButton.setOnAction(event -> {
-            String accountNumber = accountSearchInput.getText().trim();
-            if (accountNumber.isEmpty()) {
+            String accountNumberStr = accountSearchInput.getText().trim();
+            if (accountNumberStr.isEmpty()) {
                 Alert alert = new Alert(Alert.AlertType.WARNING, "Please enter an account number.", ButtonType.OK);
                 alert.showAndWait();
                 return;
             }
-            PropertyAssessment property = propertiesClass.getProperties().stream()
-                    .filter(p -> Integer.toString(p.getAccountID()).equalsIgnoreCase(accountNumber))
-                    .findFirst()
-                    .orElse(null);
-            if (property == null) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
-                alert.showAndWait();
-            } else {
-                displayPropertyInfo(property, propertyInfoArea);
-                highlightSelectedProperty(property);
+
+            try {
+                int accountNumber = Integer.parseInt(accountNumberStr);
+                PropertyAssessment property = propertiesClass.getPropertyByAccountID(accountNumber);
+
+                if (property == null) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
+                    alert.showAndWait();
+                } else {
+                    displayPropertyInfo(property, propertyInfoArea);
+                    highlightSelectedProperty(property);
+                }
+            } catch (NumberFormatException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Account number must be a valid number", ButtonType.OK);
             }
         });
     }
@@ -519,45 +528,111 @@ public class App extends Application {
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
+        // Create a ProgressBar
+        ProgressBar progressBar = new ProgressBar();
 
-        // Clear all graphics prior to highlighting
-        graphicsOverlay.getGraphics().clear();
+        // Background task for preparing graphics
+        Task<List<Graphic>> task = new Task<>() {
+            @Override
+            protected List<Graphic> call() {
+                List<Graphic> fadedGraphics = new ArrayList<>();
+                List<PropertyAssessment> properties = propertiesClass.getProperties();
 
-        // Highlight the selected property
-        SimpleMarkerSymbol selectedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
-        Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
-        // Center the map on the Highlighted property
-        mapView.setViewpointCenterAsync(point, 3000);
+                for (int i = 0; i < properties.size(); i++) {
+                    PropertyAssessment otherProperty = properties.get(i);
 
-        Graphic highlightedGraphic = new Graphic(point, selectedSymbol);
-        graphicsOverlay.getGraphics().add(highlightedGraphic);
+                    if (otherProperty != property) { // Exclude the selected property
+                        Color fadedColor = getAssesmentColor(otherProperty.getAssessedValue()).deriveColor(0, 1, 1, 0.3);
+                        SimpleMarkerSymbol fadedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, fadedColor, 15);
+                        Point fadedPoint = new Point(otherProperty.getLocation().getLng(), otherProperty.getLocation().getLat(), SpatialReferences.getWgs84());
+                        Graphic fadedGraphic = new Graphic(fadedPoint, fadedSymbol);
+                        fadedGraphics.add(fadedGraphic);
+                    }
 
-        // Fade surrounding properties by adding semi-transparent markers
-        propertiesClass.getProperties().stream()
-                .filter(otherProperty -> otherProperty != property) // Exclude the selected property
-                .forEach(otherProperty -> {
-                    Color fadedColor = getAssesmentColor(otherProperty.getAssessedValue()).deriveColor(0, 1, 1, 0.3); // Reduce opacity
-                    SimpleMarkerSymbol fadedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, fadedColor, 15);
-                    Point fadedPoint = new Point(otherProperty.getLocation().getLng(), otherProperty.getLocation().getLat(), SpatialReferences.getWgs84());
-                    Graphic fadedGraphic = new Graphic(fadedPoint, fadedSymbol);
-                    graphicsOverlay.getGraphics().add(fadedGraphic);
-                });
+                    // Update progress
+                    updateProgress(i + 1, properties.size());
+                }
 
+                // Prepare the highlighted graphic
+                Point highlightedPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                SimpleMarkerSymbol highlightedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
+                fadedGraphics.add(new Graphic(highlightedPoint, highlightedSymbol));
 
+                return fadedGraphics;
+            }
+        };
+
+        // Bind the task progress to the ProgressBar
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        // Add the ProgressBar to the statisticsPanel
+        Platform.runLater(() -> statisticsPanel.getChildren().add(progressBar));
+
+        task.setOnSucceeded(e -> {
+            // Remove the progress bar
+            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+
+            // Update graphics overlay and map viewpoint
+            graphicsOverlay.getGraphics().clear();
+            graphicsOverlay.getGraphics().addAll(task.getValue()); // Add all graphics in one batch
+
+            // Center the map on the selected property
+            Point centerPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+            mapView.setViewpointCenterAsync(centerPoint, 3000);
+        });
+
+        task.setOnFailed(e -> {
+            // Remove the progress bar in case of failure
+            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+            e.getSource().getException().printStackTrace();
+        });
+
+        // Start the task in a background thread
+        new Thread(task).start();
     }
+
 
     private void addPropertiesToMap(List<PropertyAssessment> properties) {
-        for (PropertyAssessment property : properties) {
-            Color color = getAssesmentColor(property.getAssessedValue());
-            SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                List<Graphic> graphics = new ArrayList<>();
 
-            Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
-            Graphic graphic = new Graphic(point, symbol);
-            graphicsOverlay.getGraphics().add(graphic);
-        }
+                for (PropertyAssessment property : properties) {
+                    // Generate color and symbol
+                    Color color = getAssesmentColor(property.getAssessedValue());
+                    SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
+
+                    // Create the graphic
+                    Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                    Graphic graphic = new Graphic(point, symbol);
+                    graphics.add(graphic);
+
+                    // Update progress
+                    updateProgress(graphics.size(), properties.size());
+                }
+
+                // Add graphics to the overlay on the JavaFX thread
+                Platform.runLater(() -> graphicsOverlay.getGraphics().addAll(graphics));
+                return null;
+            }
+        };
+
+        // Bind task progress to a ProgressBar or similar UI element if needed
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        // Add progressBar to the statistics panel or another part of the UI
+        Platform.runLater(() -> {
+            statisticsPanel.getChildren().add(progressBar); // Assuming statisticsPanel is accessible here
+        });
+
+        // Remove the progressBar once the task is complete
+        task.setOnSucceeded(e -> Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar)));
+
+        // Run the task in a background thread
+        new Thread(task).start();
     }
-
-
 
     @Override
     public void stop() {
