@@ -486,41 +486,69 @@ public class App extends Application {
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
-        // Clear all graphics prior to highlighting in a background thread
-        Task<Void> task = new Task<>() {
+        // Create a ProgressBar
+        ProgressBar progressBar = new ProgressBar();
+
+        // Background task for preparing graphics
+        Task<List<Graphic>> task = new Task<>() {
             @Override
-            protected Void call() {
-                // Prepare graphics for fading surrounding properties
+            protected List<Graphic> call() {
                 List<Graphic> fadedGraphics = new ArrayList<>();
+                List<PropertyAssessment> properties = propertiesClass.getProperties();
 
-                propertiesClass.getProperties().stream()
-                        .filter(otherProperty -> otherProperty != property) // Exclude the selected property
-                        .forEach(otherProperty -> {
-                            Color fadedColor = getAssesmentColor(otherProperty.getAssessedValue()).deriveColor(0, 1, 1, 0.3); // Reduce opacity
-                            SimpleMarkerSymbol fadedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, fadedColor, 15);
-                            Point fadedPoint = new Point(otherProperty.getLocation().getLng(), otherProperty.getLocation().getLat(), SpatialReferences.getWgs84());
-                            Graphic fadedGraphic = new Graphic(fadedPoint, fadedSymbol);
-                            fadedGraphics.add(fadedGraphic);
-                        });
+                for (int i = 0; i < properties.size(); i++) {
+                    PropertyAssessment otherProperty = properties.get(i);
 
-                // Add graphics on the JavaFX Application Thread
-                Platform.runLater(() -> {
-                    graphicsOverlay.getGraphics().clear(); // Clear existing graphics
-                    // Highlight the selected property
-                    SimpleMarkerSymbol selectedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
-                    Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
-                    mapView.setViewpointCenterAsync(point, 3000); // Center the map
-                    graphicsOverlay.getGraphics().add(new Graphic(point, selectedSymbol));
-                    graphicsOverlay.getGraphics().addAll(fadedGraphics); // Add faded graphics
-                });
+                    if (otherProperty != property) { // Exclude the selected property
+                        Color fadedColor = getAssesmentColor(otherProperty.getAssessedValue()).deriveColor(0, 1, 1, 0.3);
+                        SimpleMarkerSymbol fadedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, fadedColor, 15);
+                        Point fadedPoint = new Point(otherProperty.getLocation().getLng(), otherProperty.getLocation().getLat(), SpatialReferences.getWgs84());
+                        Graphic fadedGraphic = new Graphic(fadedPoint, fadedSymbol);
+                        fadedGraphics.add(fadedGraphic);
+                    }
 
-                return null;
+                    // Update progress
+                    updateProgress(i + 1, properties.size());
+                }
+
+                // Prepare the highlighted graphic
+                Point highlightedPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                SimpleMarkerSymbol highlightedSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.MAGENTA, 20);
+                fadedGraphics.add(new Graphic(highlightedPoint, highlightedSymbol));
+
+                return fadedGraphics;
             }
         };
 
-        // Run the task in a background thread
+        // Bind the task progress to the ProgressBar
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        // Add the ProgressBar to the statisticsPanel
+        Platform.runLater(() -> statisticsPanel.getChildren().add(progressBar));
+
+        task.setOnSucceeded(e -> {
+            // Remove the progress bar
+            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+
+            // Update graphics overlay and map viewpoint
+            graphicsOverlay.getGraphics().clear();
+            graphicsOverlay.getGraphics().addAll(task.getValue()); // Add all graphics in one batch
+
+            // Center the map on the selected property
+            Point centerPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+            mapView.setViewpointCenterAsync(centerPoint, 3000);
+        });
+
+        task.setOnFailed(e -> {
+            // Remove the progress bar in case of failure
+            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+            e.getSource().getException().printStackTrace();
+        });
+
+        // Start the task in a background thread
         new Thread(task).start();
     }
+
 
     private void addPropertiesToMap(List<PropertyAssessment> properties) {
         Task<Void> task = new Task<>() {
