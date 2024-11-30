@@ -530,6 +530,9 @@ public class App extends Application {
     private void highlightSelectedProperty(PropertyAssessment property) {
         // Create a ProgressBar
         ProgressBar progressBar = new ProgressBar();
+        Label loadingLabel = new Label("Loading Data");
+        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        loadingLabel.setStyle("-fx-text-fill: #2b5b84");
 
         // Background task for preparing graphics
         Task<List<Graphic>> task = new Task<>() {
@@ -566,11 +569,11 @@ public class App extends Application {
         progressBar.progressProperty().bind(task.progressProperty());
 
         // Add the ProgressBar to the statisticsPanel
-        Platform.runLater(() -> statisticsPanel.getChildren().add(progressBar));
+        Platform.runLater(() -> statisticsPanel.getChildren().addAll(loadingLabel, progressBar));
 
         task.setOnSucceeded(e -> {
             // Remove the progress bar
-            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+            Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar));
 
             // Update graphics overlay and map viewpoint
             graphicsOverlay.getGraphics().clear();
@@ -583,7 +586,7 @@ public class App extends Application {
 
         task.setOnFailed(e -> {
             // Remove the progress bar in case of failure
-            Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar));
+            Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar));
             e.getSource().getException().printStackTrace();
         });
 
@@ -620,15 +623,18 @@ public class App extends Application {
 
         // Bind task progress to a ProgressBar or similar UI element if needed
         ProgressBar progressBar = new ProgressBar();
+        Label loadingLabel = new Label("Loading Data");
+        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
         progressBar.progressProperty().bind(task.progressProperty());
 
         // Add progressBar to the statistics panel or another part of the UI
         Platform.runLater(() -> {
-            statisticsPanel.getChildren().add(progressBar); // Assuming statisticsPanel is accessible here
+            statisticsPanel.getChildren().addAll(loadingLabel, progressBar); // Assuming statisticsPanel is accessible here
         });
 
         // Remove the progressBar once the task is complete
-        task.setOnSucceeded(e -> Platform.runLater(() -> statisticsPanel.getChildren().remove(progressBar)));
+        task.setOnSucceeded(e -> Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar)));
 
         // Run the task in a background thread
         new Thread(task).start();
