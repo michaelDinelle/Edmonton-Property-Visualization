@@ -538,12 +538,12 @@ public class App extends Application {
             DecimalFormat numberFormat = new DecimalFormat("#,###");
 
             propertyInfoArea.setText("Statistics: " + filterValue + "\n" + String.format(
-                            "n: %s%n" +
-                            "min: $%s%n" +
-                            "max: $%s%n"  +
-                            "range: $%s%n" +
-                            "mean: $%s%n" +
-                            "median: $%s%n",
+                            "Number of properties: %s%n" +
+                            "Minimum property value: $%s%n" +
+                            "Maximum property value: $%s%n"  +
+                            "Property value Range: $%s%n" +
+                            "Mean Property Value: $%s%n" +
+                            "Median Property Value: $%s%n",
                     propertyAssessments.getNumberOfRecords(),
                     numberFormat.format(propertyAssessments.getMinValue()),
                     numberFormat.format(propertyAssessments.getMaxValue()),
