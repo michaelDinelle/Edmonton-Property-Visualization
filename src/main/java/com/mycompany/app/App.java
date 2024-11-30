@@ -64,6 +64,7 @@ public class App extends Application {
     private TextField accountSearchInput;
     private Button removeFilterButton;
     private Button accountSearchButton;
+    private Button toggleStatsButton;
 
     private VBox statisticsPanel;
 
@@ -113,9 +114,22 @@ public class App extends Application {
         accountSearchButtonFunctionality();
         filterButtonFunctionality();
         removeFilterButtonFunctionality();
+        toggleStatsButtonFunctionality(borderPane);
 
         // Create the mapview and graphics overlay
         initializeMap(borderPane);
+
+        // Create a StackPane to overlay the toggle button on the map
+        StackPane stackPane = new StackPane();
+        stackPane.getChildren().addAll(borderPane, toggleStatsButton);
+
+        // Position the toggle button in the top-right corner
+        StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
+        StackPane.setMargin(toggleStatsButton, new Insets(10));
+        scene.setRoot(stackPane);
+        stage.setScene(scene);
+        stage.show();
+
 
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
@@ -347,6 +361,22 @@ public class App extends Application {
     }
 
 
+    private void toggleStatsButtonFunctionality(BorderPane borderPane) {
+        toggleStatsButton = new Button("Hide Statistics");
+        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
+        toggleStatsButton.setOnAction(event -> {
+            if (borderPane.getRight() != null) {
+                // Hide the statistics panel
+                borderPane.setRight(null);
+                toggleStatsButton.setText("Show Statistics");
+            } else {
+                // Show the statistics panel
+                borderPane.setRight(statisticsPanel);
+                toggleStatsButton.setText("Hide Statistics");
+            }
+        });
+    }
+
     private void accountSearchButtonFunctionality() {
         // Add functionality to Account Search button
         accountSearchButton.setOnAction(event -> {
@@ -508,12 +538,12 @@ public class App extends Application {
             DecimalFormat numberFormat = new DecimalFormat("#,###");
 
             propertyInfoArea.setText("Statistics: " + filterValue + "\n" + String.format(
-                            "n: %s%n" +
-                            "min: $%s%n" +
-                            "max: $%s%n"  +
-                            "range: $%s%n" +
-                            "mean: $%s%n" +
-                            "median: $%s%n",
+                            "Number of properties: %s%n" +
+                            "Minimum property value: $%s%n" +
+                            "Maximum property value: $%s%n"  +
+                            "Property value Range: $%s%n" +
+                            "Mean Property Value: $%s%n" +
+                            "Median Property Value: $%s%n",
                     propertyAssessments.getNumberOfRecords(),
                     numberFormat.format(propertyAssessments.getMinValue()),
                     numberFormat.format(propertyAssessments.getMaxValue()),
