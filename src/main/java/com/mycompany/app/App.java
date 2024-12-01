@@ -302,9 +302,6 @@ public class App extends Application {
 
     private VBox createLegend() {
         legend = new VBox(5);
-        legend.setPadding(new Insets(10));
-        legend.setStyle("-fx-background-color: rgba(240, 240, 240, 0.8); -fx-background-radius: 5;");
-        legend.setAlignment(Pos.TOP_LEFT);
 
         Label legendLabel = new Label("Legend:");
         legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
