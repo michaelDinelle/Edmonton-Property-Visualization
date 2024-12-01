@@ -99,13 +99,13 @@ public class App extends Application {
         addPropertiesToMap(propertiesClass.getProperties());
 
         // Initialize all UI components
-        MapView mapLayout = createMapLayout();
+        mapView = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
         VBox statisticsPanel = createStatisticsPanel();
         Button toggleStatsButton = createToggleButton();
 
         // Add all components to the StackPane in the correct order
-        setupStackPane(mapLayout, accordionFilterPanel, statisticsPanel, toggleStatsButton);
+        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton);
 
         //Add Button Functionality
         accountSearchButtonFunctionality();
