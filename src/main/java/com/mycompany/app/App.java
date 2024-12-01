@@ -266,8 +266,7 @@ public class App extends Application {
     private VBox createStatisticsPanel() {
         statisticsPanel = new VBox(10);
 
-        statisticsPanel.setPadding(new Insets(10, 10, 10,10));
-        statisticsPanel.setAlignment(Pos.TOP_LEFT);
+//        statisticsPanel.setPadding(new Insets(10, 10, 10,10));
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
