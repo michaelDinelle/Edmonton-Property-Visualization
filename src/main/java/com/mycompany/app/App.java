@@ -96,15 +96,11 @@ public class App extends Application {
         // Create a JavaFX scene with a BorderPane layout
         BorderPane borderPane = new BorderPane();
 
-        // Initialize the statistics Panel and set it to the right
-        VBox statisticsPanel = createStatisticsPanel();
-        borderPane.setRight(statisticsPanel);
+        // Create a StackPane as the root layout
+        rootStackPane = new StackPane();
 
         // Create the mapview and graphics overlay
         initializeMap(borderPane);
-
-        // Create a StackPane as the root layout
-        rootStackPane = new StackPane();
 
         // Add the BorderPane and toggleStatsButton to the StackPane
         rootStackPane.getChildren().add(borderPane);
@@ -115,12 +111,18 @@ public class App extends Application {
         StackPane.setMargin(accordionFilterPanel, new Insets(10));
         rootStackPane.getChildren().add(accordionFilterPanel);
 
+        // Initialize the statistics Panel and set it to the top-right corner
+        VBox statisticsPanel = createStatisticsPanel();
+        StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(statisticsPanel, new Insets(10));
+        rootStackPane.getChildren().add(statisticsPanel);
+
         // Add the toggle stats button to the overlay in the top-right corner
         toggleStatsButton = new Button("Hide Statistics");
         toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
-        toggleStatsButtonFunctionality(borderPane);
+        toggleStatsButtonFunctionality();
         StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
-        StackPane.setMargin(toggleStatsButton, new Insets(10));
+        StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
         rootStackPane.getChildren().add(toggleStatsButton);
 
         //Add Buttons to Accordion sub panels
@@ -142,7 +144,6 @@ public class App extends Application {
         // Center the map on Edmonton
         Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
         mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
-
     }
 
     private void loadPropertyData() {
@@ -176,10 +177,11 @@ public class App extends Application {
     private VBox createStatisticsPanel() {
         statisticsPanel = new VBox(10);
 
-        statisticsPanel.setPadding(new Insets(15));
+        statisticsPanel.setPadding(new Insets(10, 10, 10,10));
         statisticsPanel.setAlignment(Pos.TOP_LEFT);
         statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
         statisticsPanel.setPrefWidth(300);
+        statisticsPanel.setMaxWidth(300);
 
         Label statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
@@ -376,15 +378,19 @@ public class App extends Application {
     }
 
 
-    private void toggleStatsButtonFunctionality(BorderPane borderPane) {
+    private void toggleStatsButtonFunctionality() {
         toggleStatsButton.setOnAction(event -> {
-            if (borderPane.getRight() != null) {
+            if (rootStackPane.getChildren().contains(statisticsPanel)) {
                 // Hide the statistics panel
-                borderPane.setRight(null);
+                rootStackPane.getChildren().remove(statisticsPanel);
+                StackPane.setMargin(toggleStatsButton, new Insets(10));
                 toggleStatsButton.setText("Show Statistics");
             } else {
                 // Show the statistics panel
-                borderPane.setRight(statisticsPanel);
+                rootStackPane.getChildren().add(statisticsPanel);
+                StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
+                StackPane.setMargin(statisticsPanel, new Insets(10));
+                StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
                 toggleStatsButton.setText("Hide Statistics");
             }
         });
