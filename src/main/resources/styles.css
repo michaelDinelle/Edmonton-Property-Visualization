@@ -1,3 +1,85 @@
+.root {
+    -fx-font-family: Arial;
+}
+
+/* General styles */
+.button {
+    -fx-background-radius: 5;
+    -fx-padding: 5 10;
+}
+
+.label {
+    -fx-text-fill: #2b5b84;
+}
+
+/* Legend styles */
+.legend {
+    -fx-background-color: rgba(240, 240, 240, 0.8);
+    -fx-background-radius: 5;
+}
+
+.legend-item-color {
+    -fx-border-color: black;
+}
+
+/* Statistics Panel styles */
+.statistics-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+}
+
+.statistics-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
+/* Toggle stats button styles */
+.toggle-stats-button {
+    -fx-background-color: #007ACC;
+    -fx-text-fill: white;
+    -fx-background-radius: 10;
+}
+
+/* Property Group Pane styles */
+.property-group-pane {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
+/* Filter button styles */
+.filter-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.remove-filter-button {
+    -fx-background-color: #ca072f;
+    -fx-text-fill: white;
+}
+
+/* Account Search Button styles */
+.account-search-button {
+    -fx-background-color: #007ACC;
+    -fx-text-fill: white;
+}
+
+/* Loading container styles */
+.loading-container {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-padding: 20;
+}
+
+.loading-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
 .titled-pane > .content {
     -fx-background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
 }
