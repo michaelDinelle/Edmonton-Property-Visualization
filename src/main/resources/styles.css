@@ -46,9 +46,21 @@
     -fx-background-color: rgba(255, 255, 255, 0.8);
     -fx-background-radius: 10;
     -fx-font-size: 16px;
+    -fx-font-family: "Arial";
     -fx-font-weight: bold;
     -fx-text-fill: #2b5b84;
 }
+
+.account-number-pane {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
+
 
 /* Filter button styles */
 .filter-button {

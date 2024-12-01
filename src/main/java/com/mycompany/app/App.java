@@ -107,9 +107,18 @@ public class App extends Application {
         removeFilterButtonFunctionality();
 
         Scene scene = new Scene(rootStackPane);
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
+        applyStylesToScene(scene);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void applyStylesToScene(Scene scene){
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
+
+        propertyGroupPane.getStyleClass().add("property-group-pane");
+        accountNumberPane.getStyleClass().add("account-number-pane");
+
+
     }
 
     private void initializeArcGISRuntime() {
@@ -217,12 +226,10 @@ public class App extends Application {
         // Neighborhood filter
         propertyGroupPane = new TitledPane();
         propertyGroupPane.setText("Property Group Search");
-        propertyGroupPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
         // Account Number Filter
         accountNumberPane = new TitledPane();
         accountNumberPane.setText("Account Search");
-        accountNumberPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
         //Add Buttons to Accordion sub panes
         addButtonsToPropertyGroupPane();
