@@ -71,7 +71,13 @@ public class App extends Application {
     private Button accountSearchButton;
 
     private VBox statisticsPanel;
+    private Label statisticsLabel;
     private StackPane rootStackPane;
+
+    private VBox legend;
+    private HBox legendItem;
+
+    private Button toggleStatsButton;
 
     public static void main(String[] args) {
         Application.launch(args);
@@ -107,9 +113,29 @@ public class App extends Application {
         removeFilterButtonFunctionality();
 
         Scene scene = new Scene(rootStackPane);
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
+        applyStylesToScene(scene);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void applyStylesToScene(Scene scene){
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
+
+        propertyGroupPane.getStyleClass().add("property-group-pane");
+        accountNumberPane.getStyleClass().add("account-number-pane");
+
+        statisticsPanel.getStyleClass().add("statistics-panel");
+        statisticsLabel.getStyleClass().add("statistics-label");
+
+        legend.getStyleClass().add("legend");
+        legendItem.getStyleClass().add("legend-item");
+
+        toggleStatsButton.getStyleClass().add("toggle-stats-button");
+        filterButton.getStyleClass().add("filter-button");
+        removeFilterButton.getStyleClass().add("remove-filter-button");
+        accountSearchButton.getStyleClass().add("account-search-button");
+
+
     }
 
     private void initializeArcGISRuntime() {
@@ -217,12 +243,10 @@ public class App extends Application {
         // Neighborhood filter
         propertyGroupPane = new TitledPane();
         propertyGroupPane.setText("Property Group Search");
-        propertyGroupPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
         // Account Number Filter
         accountNumberPane = new TitledPane();
         accountNumberPane.setText("Account Search");
-        accountNumberPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
         //Add Buttons to Accordion sub panes
         addButtonsToPropertyGroupPane();
@@ -242,13 +266,10 @@ public class App extends Application {
     private VBox createStatisticsPanel() {
         statisticsPanel = new VBox(10);
 
-        statisticsPanel.setPadding(new Insets(10, 10, 10,10));
-        statisticsPanel.setAlignment(Pos.TOP_LEFT);
-        statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
-        Label statisticsLabel = new Label("Property Overview");
+        statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
 
@@ -280,10 +301,7 @@ public class App extends Application {
     }
 
     private VBox createLegend() {
-        VBox legend = new VBox(5);
-        legend.setPadding(new Insets(10));
-        legend.setStyle("-fx-background-color: rgba(240, 240, 240, 0.8); -fx-background-radius: 5;");
-        legend.setAlignment(Pos.TOP_LEFT);
+        legend = new VBox(5);
 
         Label legendLabel = new Label("Legend:");
         legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -304,8 +322,7 @@ public class App extends Application {
     }
 
     private HBox createLegendItem(String labelText, Color color) {
-        HBox legendItem = new HBox(5);
-        legendItem.setAlignment(Pos.CENTER_LEFT);
+        legendItem = new HBox(5);
 
         Label colorBox = new Label();
         colorBox.setPrefSize(15, 15);
@@ -326,13 +343,12 @@ public class App extends Application {
     }
 
     private Button createToggleButton() {
-        Button toggleStatsButton = new Button("Hide Statistics");
-        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
-        toggleStatsButtonFunctionality(toggleStatsButton);
+        toggleStatsButton = new Button("Hide Statistics");
+        toggleStatsButtonFunctionality();
         return toggleStatsButton;
     }
 
-    private void toggleStatsButtonFunctionality(Button toggleStatsButton) {
+    private void toggleStatsButtonFunctionality() {
         toggleStatsButton.setOnAction(event -> {
             if (rootStackPane.getChildren().contains(statisticsPanel)) {
                 // Hide the statistics panel
@@ -370,10 +386,8 @@ public class App extends Application {
         rootStackPane.getChildren().add(toggleStatsButton);
     }
 
-    private Button createButton(String text, String backgroundColor) {
+    private Button createButton(String text) {
         Button button = new Button(text);
-        button.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        button.setStyle("-fx-background-color: " + backgroundColor + "; -fx-text-fill: white; -fx-background-radius: 5;");
         return button;
     }
 
@@ -396,9 +410,9 @@ public class App extends Application {
                 populateValues(selectedFilter);
         });
 
-        filterButton = createButton("Apply Filter", "#4CAF50");
+        filterButton = createButton("Apply Filter");
 
-        removeFilterButton = createButton("Remove Filters", "#ca072f");
+        removeFilterButton = createButton("Remove Filters");
 
         propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, filterButton, removeFilterButton);
         propertyGroupPane.setContent(propertyGroupContent);
@@ -411,7 +425,7 @@ public class App extends Application {
 
         accountSearchInput = new TextField();
         accountSearchInput.setPromptText("Enter the account number");
-        accountSearchButton = createButton("Search", "#007ACC");
+        accountSearchButton = createButton("Search");
 
         accountGroupContent.getChildren().addAll(accountSearchLabel, accountSearchInput, accountSearchButton);
         accountNumberPane.setContent(accountGroupContent);

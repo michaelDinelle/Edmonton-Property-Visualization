@@ -16,16 +16,20 @@
 .legend {
     -fx-background-color: rgba(240, 240, 240, 0.8);
     -fx-background-radius: 5;
+    -fx-padding: 10;
+    -fx-alignment: top-left;
 }
 
-.legend-item-color {
-    -fx-border-color: black;
+.legend-item {
+    -fx-alignment: center-left;
 }
 
 /* Statistics Panel styles */
 .statistics-panel {
     -fx-background-color: rgba(255, 255, 255, 0.8);
     -fx-background-radius: 10;
+    -fx-alignment: top-left;
+    -fx-padding: 10;
 }
 
 .statistics-label {
@@ -46,9 +50,21 @@
     -fx-background-color: rgba(255, 255, 255, 0.8);
     -fx-background-radius: 10;
     -fx-font-size: 16px;
+    -fx-font-family: "Arial";
     -fx-font-weight: bold;
     -fx-text-fill: #2b5b84;
 }
+
+.account-number-pane {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
+
 
 /* Filter button styles */
 .filter-button {
