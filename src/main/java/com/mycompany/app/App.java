@@ -76,6 +76,8 @@ public class App extends Application {
 
     private VBox legend;
 
+    private Button toggleStatsButton;
+
     public static void main(String[] args) {
         Application.launch(args);
     }
@@ -125,6 +127,11 @@ public class App extends Application {
         statisticsLabel.getStyleClass().add("statistics-label");
 
         legend.getStyleClass().add("legend");
+
+        toggleStatsButton.getStyleClass().add("toggle-stats-button");
+        filterButton.getStyleClass().add("filter-button");
+        removeFilterButton.getStyleClass().add("remove-filter-button");
+        accountSearchButton.getStyleClass().add("account-search-button");
 
 
     }
@@ -340,13 +347,12 @@ public class App extends Application {
     }
 
     private Button createToggleButton() {
-        Button toggleStatsButton = new Button("Hide Statistics");
-        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
-        toggleStatsButtonFunctionality(toggleStatsButton);
+        toggleStatsButton = new Button("Hide Statistics");
+        toggleStatsButtonFunctionality();
         return toggleStatsButton;
     }
 
-    private void toggleStatsButtonFunctionality(Button toggleStatsButton) {
+    private void toggleStatsButtonFunctionality() {
         toggleStatsButton.setOnAction(event -> {
             if (rootStackPane.getChildren().contains(statisticsPanel)) {
                 // Hide the statistics panel
@@ -384,10 +390,8 @@ public class App extends Application {
         rootStackPane.getChildren().add(toggleStatsButton);
     }
 
-    private Button createButton(String text, String backgroundColor) {
+    private Button createButton(String text) {
         Button button = new Button(text);
-        button.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        button.setStyle("-fx-background-color: " + backgroundColor + "; -fx-text-fill: white; -fx-background-radius: 5;");
         return button;
     }
 
@@ -410,9 +414,9 @@ public class App extends Application {
                 populateValues(selectedFilter);
         });
 
-        filterButton = createButton("Apply Filter", "#4CAF50");
+        filterButton = createButton("Apply Filter");
 
-        removeFilterButton = createButton("Remove Filters", "#ca072f");
+        removeFilterButton = createButton("Remove Filters");
 
         propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, filterButton, removeFilterButton);
         propertyGroupPane.setContent(propertyGroupContent);
@@ -425,7 +429,7 @@ public class App extends Application {
 
         accountSearchInput = new TextField();
         accountSearchInput.setPromptText("Enter the account number");
-        accountSearchButton = createButton("Search", "#007ACC");
+        accountSearchButton = createButton("Search");
 
         accountGroupContent.getChildren().addAll(accountSearchLabel, accountSearchInput, accountSearchButton);
         accountNumberPane.setContent(accountGroupContent);
