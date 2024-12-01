@@ -135,6 +135,7 @@ public class App extends Application {
         removeFilterButtonFunctionality();
 
         Scene scene = new Scene(rootStackPane);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setScene(scene);
         stage.show();
 
@@ -288,8 +289,8 @@ public class App extends Application {
 
         accordion.setMinWidth(200);
         accordion.setMaxWidth(300);
-        accordion.setMinHeight(300);
-        accordion.setMaxHeight(300);
+        accordion.setMaxHeight(Region.USE_PREF_SIZE);
+        accordion.setPrefHeight(Region.USE_COMPUTED_SIZE);
         return accordion;
     }
 
