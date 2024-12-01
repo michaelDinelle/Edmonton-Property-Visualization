@@ -424,7 +424,6 @@ public class App extends Application {
     }
 
     private void filterButtonFunctionality() {
-        // Add functionality to the filter button
         filterButton.setOnAction(event -> {
             String selectedFilter = filterDropdown.getValue();
             String filterValue = valueDropdown.getValue();
@@ -435,37 +434,82 @@ public class App extends Application {
                 return;
             }
 
-            List<PropertyAssessment> filteredProperties;
+            // Create a ProgressBar and Loading Label
+            ProgressBar progressBar = new ProgressBar();
+            Label loadingLabel = new Label("Applying Filter...");
+            loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
 
-            if (selectedFilter.equals("Neighborhood")) {
-                filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
-                        .collect(Collectors.toList());
+            // Create a container for the loading UI
+            VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
+            loadingContainer.setAlignment(Pos.CENTER);
+            loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+            loadingContainer.setPadding(new Insets(20));
 
-                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
-            } else if (selectedFilter.equals("Assessment Class")) {
-                filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
-                        .collect(Collectors.toList());
+            // Add the loading container to the rootStackPane
+            Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
 
-                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
-            }
-            else if (selectedFilter.equals("Ward")) {
-                filteredProperties = propertiesClass.getProperties().stream()
-                        .filter(property -> property.getNeighborhood().getWard().contains(filterValue))
-                        .collect(Collectors.toList());
+            // Background task for filtering
+            Task<List<PropertyAssessment>> task = new Task<>() {
+                @Override
+                protected List<PropertyAssessment> call() {
+                    List<PropertyAssessment> filteredProperties;
+                    if (selectedFilter.equals("Neighborhood")) {
+                        filteredProperties = propertiesClass.getProperties().stream()
+                                .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
+                                .collect(Collectors.toList());
+                    } else if (selectedFilter.equals("Assessment Class")) {
+                        filteredProperties = propertiesClass.getProperties().stream()
+                                .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
+                                .collect(Collectors.toList());
+                    } else if (selectedFilter.equals("Ward")) {
+                        filteredProperties = propertiesClass.getProperties().stream()
+                                .filter(property -> property.getNeighborhood().getWard().contains(filterValue))
+                                .collect(Collectors.toList());
+                    } else {
+                        return null; // Invalid filter
+                    }
 
-                displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
-            }
+                    // Simulate progress
+                    for (int i = 0; i < 10; i++) {
+                        updateProgress(i + 1, 10);
+                        try {
+                            Thread.sleep(50); // Simulated delay
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
 
-            else {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
-                alert.showAndWait();
-                return;
-            }
+                    return filteredProperties;
+                }
+            };
 
-            // Update the map with filtered properties
-            updateMapWithFilteredProperties(filteredProperties);
+            // Bind the task's progress to the ProgressBar
+            progressBar.progressProperty().bind(task.progressProperty());
+
+            task.setOnSucceeded(e -> {
+                // Remove the loading container
+                Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+
+                // Update map and display statistics
+                List<PropertyAssessment> filteredProperties = task.getValue();
+                if (filteredProperties != null) {
+                    displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
+                    updateMapWithFilteredProperties(filteredProperties);
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
+                    alert.showAndWait();
+                }
+            });
+
+            task.setOnFailed(e -> {
+                // Remove the loading container in case of failure
+                Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+                task.getException().printStackTrace();
+            });
+
+            // Start the task in a background thread
+            new Thread(task).start();
         });
     }
 
