@@ -24,10 +24,8 @@ import com.esri.arcgisruntime.mapping.BasemapStyle;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
-import com.esri.arcgisruntime.mapping.view.WrapAroundMode;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
-import javafx.beans.property.Property;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -44,9 +42,15 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class App extends Application {
+    // Global variables that might need to change
+    private final Integer initialScreenWidth = 1000;
+    private final Integer initialScreenHeight = 800;
+    private final Integer minScreenWidth = 800;
+    private final Integer minScreenHeight = 600;
 
     private MapView mapView;
     private GraphicsOverlay graphicsOverlay;
@@ -65,13 +69,9 @@ public class App extends Application {
     private TextField accountSearchInput;
     private Button removeFilterButton;
     private Button accountSearchButton;
-    private Button toggleStatsButton;
 
     private VBox statisticsPanel;
     private StackPane rootStackPane;
-
-
-
 
     public static void main(String[] args) {
         Application.launch(args);
@@ -79,55 +79,27 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
-        // Set API key for ArcGIS
-        String yourApiKey = "AAPTxy8BH1VEsoebNVZXo8HurFJ2xCDXvFC-uJSDrIEtVkCMkq-W26QCtQCgZQipt1lUwR3Pm3yRRKbeYBv6kCefEqVXMAsnQ4rVMkNdiFC5DLtXmhx_Daydix9ND6gKSfXvNdbEQeQwWhhHluGF5DXHa496Q77CndgVM7EY_nadJd-0J9bw5HiOrqsb4as3xU5lBVtBAp2G1FB5WYInTpK_0C6_6_reJIkqqnHUoC6Ez_o.AT1_V1QXZfZZ";
-        ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+        initializeArcGISRuntime();
 
-        // Load property data
-        loadPropertyData();
-
-        // Set the title and size of the stage and show it
-        stage.setTitle("My Map App");
-        stage.setWidth(1000);
-        stage.setHeight(800);
-        stage.setMinWidth(800);
-        stage.setMinHeight(600);
-
-        // Create a JavaFX scene with a BorderPane layout
-        BorderPane borderPane = new BorderPane();
+        initializeStage(stage);
 
         // Create a StackPane as the root layout
         rootStackPane = new StackPane();
 
-        // Create the mapview and graphics overlay
-        initializeMap(borderPane);
+        // Load property data
+        loadPropertyData();
 
-        // Add the BorderPane and toggleStatsButton to the StackPane
-        rootStackPane.getChildren().add(borderPane);
+        // Add all properties to the map initially
+        addPropertiesToMap(propertiesClass.getProperties());
 
-        // Initialize the accordion filter panel and set it to the top-left corner
+        // Initialize all UI components
+        MapView mapLayout = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
-        StackPane.setAlignment(accordionFilterPanel, Pos.TOP_LEFT);
-        StackPane.setMargin(accordionFilterPanel, new Insets(10));
-        rootStackPane.getChildren().add(accordionFilterPanel);
-
-        // Initialize the statistics Panel and set it to the top-right corner
         VBox statisticsPanel = createStatisticsPanel();
-        StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
-        StackPane.setMargin(statisticsPanel, new Insets(10));
-        rootStackPane.getChildren().add(statisticsPanel);
+        Button toggleStatsButton = createToggleButton();
 
-        // Add the toggle stats button to the overlay in the top-right corner
-        toggleStatsButton = new Button("Hide Statistics");
-        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
-        toggleStatsButtonFunctionality();
-        StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
-        StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
-        rootStackPane.getChildren().add(toggleStatsButton);
-
-        //Add Buttons to Accordion sub panels
-        addButtonsToPropertyGroupPane();
-        addButtonsToAccountNumberPane();
+        // Add all components to the StackPane in the correct order
+        setupStackPane(mapLayout, accordionFilterPanel, statisticsPanel, toggleStatsButton);
 
         //Add Button Functionality
         accountSearchButtonFunctionality();
@@ -135,15 +107,24 @@ public class App extends Application {
         removeFilterButtonFunctionality();
 
         Scene scene = new Scene(rootStackPane);
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles.css")).toExternalForm());
         stage.setScene(scene);
         stage.show();
+    }
 
-        // Add all properties to the map initially
-        addPropertiesToMap(propertiesClass.getProperties());
+    private void initializeArcGISRuntime() {
+        // Set API key for ArcGIS
+        String yourApiKey = "AAPTxy8BH1VEsoebNVZXo8HurFJ2xCDXvFC-uJSDrIEtVkCMkq-W26QCtQCgZQipt1lUwR3Pm3yRRKbeYBv6kCefEqVXMAsnQ4rVMkNdiFC5DLtXmhx_Daydix9ND6gKSfXvNdbEQeQwWhhHluGF5DXHa496Q77CndgVM7EY_nadJd-0J9bw5HiOrqsb4as3xU5lBVtBAp2G1FB5WYInTpK_0C6_6_reJIkqqnHUoC6Ez_o.AT1_V1QXZfZZ";
+        ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+    }
 
-        // Center the map on Edmonton
-        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
-        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+    private void initializeStage(Stage stage) {
+        // Set the title and size of the stage and show it
+        stage.setTitle("Edmonton Properties Map");
+        stage.setWidth(initialScreenWidth);
+        stage.setHeight(initialScreenHeight);
+        stage.setMinWidth(minScreenWidth);
+        stage.setMinHeight(minScreenHeight);
     }
 
     private void loadPropertyData() {
@@ -157,21 +138,105 @@ public class App extends Application {
         }
     }
 
-    private void initializeMap(BorderPane borderPane) {
-        // Create a MapView to display the map
-        mapView = new MapView();
-        // Create an ArcGISMap with an imagery basemap
-        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY);
+    private void addPropertiesToMap(List<PropertyAssessment> properties) {
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                List<Graphic> graphics = new ArrayList<>();
+
+                for (PropertyAssessment property : properties) {
+                    // Generate color and symbol
+                    Color color = getAssesmentColor(property.getAssessedValue());
+                    SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
+
+                    // Create the graphic
+                    Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                    Graphic graphic = new Graphic(point, symbol);
+                    graphics.add(graphic);
+
+                    // Update progress
+                    updateProgress(graphics.size(), properties.size());
+                }
+
+                // Add graphics to the overlay on the JavaFX thread
+                Platform.runLater(() -> graphicsOverlay.getGraphics().addAll(graphics));
+                return null;
+            }
+        };
+
+        // Create ProgressBar and Loading Label
+        ProgressBar progressBar = new ProgressBar();
+        Label loadingLabel = new Label("Loading Data");
+        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+        // Create a container for the loading UI
+        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
+        loadingContainer.setAlignment(Pos.CENTER);
+        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        loadingContainer.setPadding(new Insets(20));
+
+        // Add the loading container to the StackPane
+        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
+
+        // Bind the task progress to the ProgressBar
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        // Remove the loading container once the task is complete
+        task.setOnSucceeded(e -> Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer)));
+
+        // Remove the loading container in case of failure
+        task.setOnFailed(e -> {
+            Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+            task.getException().printStackTrace();
+        });
+
+        // Run the task in a background thread
+        new Thread(task).start();
+    }
+
+    private MapView createMapLayout() {
+        MapView mapView = new MapView();
+        ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_DARK_GRAY); // Creates a new ArcGIS map
         map.setReferenceScale(10000);
-        mapView.setMap(map);
+        mapView.setMap(map);// Sets the scaling for when the symbols on the map should appear
 
-        // Create a graphics overlay
+        // Center the map on Edmonton
+        Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+        mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+
         graphicsOverlay = new GraphicsOverlay();
-        // Enable scaling of symbols in the graphics overlay
-        graphicsOverlay.setScaleSymbols(true); // This will scale the map symbols when zooming in and out
+        graphicsOverlay.setScaleSymbols(true);
         mapView.getGraphicsOverlays().add(graphicsOverlay);
+        return mapView;
+    }
 
-        borderPane.setCenter(mapView);
+    private Accordion createAccordionFilterPanel() {
+        Accordion accordion = new Accordion();
+
+        // Neighborhood filter
+        propertyGroupPane = new TitledPane();
+        propertyGroupPane.setText("Property Group Search");
+        propertyGroupPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+
+        // Account Number Filter
+        accountNumberPane = new TitledPane();
+        accountNumberPane.setText("Account Search");
+        accountNumberPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+
+        //Add Buttons to Accordion sub panes
+        addButtonsToPropertyGroupPane();
+        addButtonsToAccountNumberPane();
+
+        accordion.getPanes().addAll(propertyGroupPane, accountNumberPane);
+
+        accordion.setPrefWidth(250);
+
+        accordion.setMinWidth(200);
+        accordion.setMaxWidth(300);
+        accordion.setMaxHeight(Region.USE_PREF_SIZE);
+        accordion.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        return accordion;
     }
 
     private VBox createStatisticsPanel() {
@@ -213,7 +278,6 @@ public class App extends Application {
         statisticsPanel.setPrefHeight(Region.USE_COMPUTED_SIZE);
         return statisticsPanel;
     }
-
 
     private VBox createLegend() {
         VBox legend = new VBox(5);
@@ -261,36 +325,49 @@ public class App extends Application {
                 (int) (color.getBlue() * 255));
     }
 
+    private Button createToggleButton() {
+        Button toggleStatsButton = new Button("Hide Statistics");
+        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
+        toggleStatsButtonFunctionality(toggleStatsButton);
+        return toggleStatsButton;
+    }
 
+    private void toggleStatsButtonFunctionality(Button toggleStatsButton) {
+        toggleStatsButton.setOnAction(event -> {
+            if (rootStackPane.getChildren().contains(statisticsPanel)) {
+                // Hide the statistics panel
+                rootStackPane.getChildren().remove(statisticsPanel);
+                StackPane.setMargin(toggleStatsButton, new Insets(10));
+                toggleStatsButton.setText("Show Statistics");
+            } else {
+                // Show the statistics panel
+                rootStackPane.getChildren().add(statisticsPanel);
+                StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
+                StackPane.setMargin(statisticsPanel, new Insets(10));
+                StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
+                toggleStatsButton.setText("Hide Statistics");
+            }
+        });
+    }
 
-    private Accordion createAccordionFilterPanel() {
-        Accordion accordion = new Accordion();
+    private void setupStackPane(MapView mapLayout, Accordion accordionFilterPanel, VBox statisticsPanel, Button toggleStatsButton) {
+        // Add the map layout (background layer)
+        rootStackPane.getChildren().add(mapLayout);
 
-        // Neighborhood filter
-        propertyGroupPane = new TitledPane();
-        propertyGroupPane.setText("Property Group Search");
-        propertyGroupPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        propertyGroupPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        propertyGroupPane.setStyle("-fx-text-fill: #2b5b84;");
+        // Add the filter panel (top-left corner)
+        StackPane.setAlignment(accordionFilterPanel, Pos.TOP_LEFT);
+        StackPane.setMargin(accordionFilterPanel, new Insets(10));
+        rootStackPane.getChildren().add(accordionFilterPanel);
 
-        // Account Number Filter
-        accountNumberPane = new TitledPane();
-        accountNumberPane.setText("Account Search");
-        accountNumberPane.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        accountNumberPane.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        accountNumberPane.setStyle("-fx-text-fill: #2b5b84;");
+        // Add the statistics panel (top-right corner)
+        StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
+        StackPane.setMargin(statisticsPanel, new Insets(10));
+        rootStackPane.getChildren().add(statisticsPanel);
 
-
-
-        accordion.getPanes().addAll(propertyGroupPane, accountNumberPane);
-
-        accordion.setPrefWidth(250);
-
-        accordion.setMinWidth(200);
-        accordion.setMaxWidth(300);
-        accordion.setMinHeight(300);
-        accordion.setMaxHeight(300);
-        return accordion;
+        // Add the statistics panel toggle button
+        StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
+        StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
+        rootStackPane.getChildren().add(toggleStatsButton);
     }
 
     private Button createButton(String text, String backgroundColor) {
@@ -299,7 +376,6 @@ public class App extends Application {
         button.setStyle("-fx-background-color: " + backgroundColor + "; -fx-text-fill: white; -fx-background-radius: 5;");
         return button;
     }
-
 
     private void addButtonsToPropertyGroupPane(){
         VBox propertyGroupContent = new VBox(10);
@@ -375,25 +451,6 @@ public class App extends Application {
                 valueDropdown.getItems().addAll(assessmentClasses);
             }
         }
-    }
-
-
-    private void toggleStatsButtonFunctionality() {
-        toggleStatsButton.setOnAction(event -> {
-            if (rootStackPane.getChildren().contains(statisticsPanel)) {
-                // Hide the statistics panel
-                rootStackPane.getChildren().remove(statisticsPanel);
-                StackPane.setMargin(toggleStatsButton, new Insets(10));
-                toggleStatsButton.setText("Show Statistics");
-            } else {
-                // Show the statistics panel
-                rootStackPane.getChildren().add(statisticsPanel);
-                StackPane.setAlignment(statisticsPanel, Pos.TOP_RIGHT);
-                StackPane.setMargin(statisticsPanel, new Insets(10));
-                StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
-                toggleStatsButton.setText("Hide Statistics");
-            }
-        });
     }
 
     private void accountSearchButtonFunctionality() {
@@ -689,64 +746,6 @@ public class App extends Application {
         });
 
         // Start the task in a background thread
-        new Thread(task).start();
-    }
-
-
-    private void addPropertiesToMap(List<PropertyAssessment> properties) {
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() throws Exception {
-                List<Graphic> graphics = new ArrayList<>();
-
-                for (PropertyAssessment property : properties) {
-                    // Generate color and symbol
-                    Color color = getAssesmentColor(property.getAssessedValue());
-                    SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 15);
-
-                    // Create the graphic
-                    Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
-                    Graphic graphic = new Graphic(point, symbol);
-                    graphics.add(graphic);
-
-                    // Update progress
-                    updateProgress(graphics.size(), properties.size());
-                }
-
-                // Add graphics to the overlay on the JavaFX thread
-                Platform.runLater(() -> graphicsOverlay.getGraphics().addAll(graphics));
-                return null;
-            }
-        };
-
-        // Create ProgressBar and Loading Label
-        ProgressBar progressBar = new ProgressBar();
-        Label loadingLabel = new Label("Loading Data");
-        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
-
-        // Create a container for the loading UI
-        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
-        loadingContainer.setAlignment(Pos.CENTER);
-        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        loadingContainer.setPadding(new Insets(20));
-
-        // Add the loading container to the StackPane
-        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
-
-        // Bind the task progress to the ProgressBar
-        progressBar.progressProperty().bind(task.progressProperty());
-
-        // Remove the loading container once the task is complete
-        task.setOnSucceeded(e -> Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer)));
-
-        // Remove the loading container in case of failure
-        task.setOnFailed(e -> {
-            Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
-            task.getException().printStackTrace();
-        });
-
-        // Run the task in a background thread
         new Thread(task).start();
     }
 
