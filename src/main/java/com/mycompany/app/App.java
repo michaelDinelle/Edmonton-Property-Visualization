@@ -71,7 +71,10 @@ public class App extends Application {
     private Button accountSearchButton;
 
     private VBox statisticsPanel;
+    private Label statisticsLabel;
     private StackPane rootStackPane;
+
+    private VBox legend;
 
     public static void main(String[] args) {
         Application.launch(args);
@@ -117,6 +120,11 @@ public class App extends Application {
 
         propertyGroupPane.getStyleClass().add("property-group-pane");
         accountNumberPane.getStyleClass().add("account-number-pane");
+
+        statisticsPanel.getStyleClass().add("statistics-panel");
+        statisticsLabel.getStyleClass().add("statistics-label");
+
+        legend.getStyleClass().add("legend");
 
 
     }
@@ -251,11 +259,10 @@ public class App extends Application {
 
         statisticsPanel.setPadding(new Insets(10, 10, 10,10));
         statisticsPanel.setAlignment(Pos.TOP_LEFT);
-        statisticsPanel.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
-        Label statisticsLabel = new Label("Property Overview");
+        statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
 
@@ -287,7 +294,7 @@ public class App extends Application {
     }
 
     private VBox createLegend() {
-        VBox legend = new VBox(5);
+        legend = new VBox(5);
         legend.setPadding(new Insets(10));
         legend.setStyle("-fx-background-color: rgba(240, 240, 240, 0.8); -fx-background-radius: 5;");
         legend.setAlignment(Pos.TOP_LEFT);
