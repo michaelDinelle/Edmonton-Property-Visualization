@@ -24,6 +24,7 @@ import com.esri.arcgisruntime.mapping.BasemapStyle;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
 import com.esri.arcgisruntime.mapping.view.MapView;
+import com.esri.arcgisruntime.mapping.view.WrapAroundMode;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.beans.property.Property;
@@ -67,6 +68,7 @@ public class App extends Application {
     private Button toggleStatsButton;
 
     private VBox statisticsPanel;
+    private StackPane rootStackPane;
 
 
 
@@ -93,43 +95,46 @@ public class App extends Application {
 
         // Create a JavaFX scene with a BorderPane layout
         BorderPane borderPane = new BorderPane();
-        Scene scene = new Scene(borderPane);
-        stage.setScene(scene);
-        stage.show();
 
-        // Initialize the accordion filter panel and set it to the left
-        Accordion accordionFilterPanel = createAccordionFilterPanel();
-
-        // Initialize the statistics Panel
+        // Initialize the statistics Panel and set it to the right
         VBox statisticsPanel = createStatisticsPanel();
         borderPane.setRight(statisticsPanel);
+
+        // Create the mapview and graphics overlay
+        initializeMap(borderPane);
+
+        // Create a StackPane as the root layout
+        rootStackPane = new StackPane();
+
+        // Add the BorderPane and toggleStatsButton to the StackPane
+        rootStackPane.getChildren().add(borderPane);
+
+        // Initialize the accordion filter panel and set it to the top-left corner
+        Accordion accordionFilterPanel = createAccordionFilterPanel();
+        StackPane.setAlignment(accordionFilterPanel, Pos.TOP_LEFT);
+        StackPane.setMargin(accordionFilterPanel, new Insets(10));
+        rootStackPane.getChildren().add(accordionFilterPanel);
+
+        // Add the toggle stats button to the overlay in the top-right corner
+        toggleStatsButton = new Button("Hide Statistics");
+        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
+        toggleStatsButtonFunctionality(borderPane);
+        StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
+        StackPane.setMargin(toggleStatsButton, new Insets(10));
+        rootStackPane.getChildren().add(toggleStatsButton);
 
         //Add Buttons to Accordion sub panels
         addButtonsToPropertyGroupPane();
         addButtonsToAccountNumberPane();
 
-        borderPane.setLeft(accordionFilterPanel);
-
         //Add Button Functionality
         accountSearchButtonFunctionality();
         filterButtonFunctionality();
         removeFilterButtonFunctionality();
-        toggleStatsButtonFunctionality(borderPane);
 
-        // Create the mapview and graphics overlay
-        initializeMap(borderPane);
-
-        // Create a StackPane to overlay the toggle button on the map
-        StackPane stackPane = new StackPane();
-        stackPane.getChildren().addAll(borderPane, toggleStatsButton);
-
-        // Position the toggle button in the top-right corner
-        StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
-        StackPane.setMargin(toggleStatsButton, new Insets(10));
-        scene.setRoot(stackPane);
+        Scene scene = new Scene(rootStackPane);
         stage.setScene(scene);
         stage.show();
-
 
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
@@ -201,6 +206,9 @@ public class App extends Application {
                 propertyInfoArea,        // Add property info area for displaying details
                 propertyStatisticsArea  // Add statistics area for group data
         );
+
+        statisticsPanel.setMaxHeight(Region.USE_PREF_SIZE);
+        statisticsPanel.setPrefHeight(Region.USE_COMPUTED_SIZE);
         return statisticsPanel;
     }
 
@@ -273,6 +281,13 @@ public class App extends Application {
 
 
         accordion.getPanes().addAll(propertyGroupPane, accountNumberPane);
+
+        accordion.setPrefWidth(250);
+
+        accordion.setMinWidth(200);
+        accordion.setMaxWidth(300);
+        accordion.setMinHeight(300);
+        accordion.setMaxHeight(300);
         return accordion;
     }
 
@@ -362,8 +377,6 @@ public class App extends Application {
 
 
     private void toggleStatsButtonFunctionality(BorderPane borderPane) {
-        toggleStatsButton = new Button("Hide Statistics");
-        toggleStatsButton.setStyle("-fx-background-color: #007ACC; -fx-text-fill: white; -fx-background-radius: 10; -fx-padding: 5 10;");
         toggleStatsButton.setOnAction(event -> {
             if (borderPane.getRight() != null) {
                 // Hide the statistics panel
@@ -564,6 +577,14 @@ public class App extends Application {
         loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         loadingLabel.setStyle("-fx-text-fill: #2b5b84");
 
+        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
+        loadingContainer.setAlignment(Pos.CENTER);
+        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        loadingContainer.setPadding(new Insets(20));
+
+        // Add the loading container to the StackPane
+        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
+
         // Background task for preparing graphics
         Task<List<Graphic>> task = new Task<>() {
             @Override
@@ -598,12 +619,9 @@ public class App extends Application {
         // Bind the task progress to the ProgressBar
         progressBar.progressProperty().bind(task.progressProperty());
 
-        // Add the ProgressBar to the statisticsPanel
-        Platform.runLater(() -> statisticsPanel.getChildren().addAll(loadingLabel, progressBar));
-
         task.setOnSucceeded(e -> {
-            // Remove the progress bar
-            Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar));
+            // Remove the loading container
+            Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
 
             // Update graphics overlay and map viewpoint
             graphicsOverlay.getGraphics().clear();
@@ -616,7 +634,7 @@ public class App extends Application {
 
         task.setOnFailed(e -> {
             // Remove the progress bar in case of failure
-            Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar));
+            Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
             e.getSource().getException().printStackTrace();
         });
 
@@ -651,20 +669,32 @@ public class App extends Application {
             }
         };
 
-        // Bind task progress to a ProgressBar or similar UI element if needed
+        // Create ProgressBar and Loading Label
         ProgressBar progressBar = new ProgressBar();
         Label loadingLabel = new Label("Loading Data");
         loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+        // Create a container for the loading UI
+        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
+        loadingContainer.setAlignment(Pos.CENTER);
+        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
+        loadingContainer.setPadding(new Insets(20));
+
+        // Add the loading container to the StackPane
+        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
+
+        // Bind the task progress to the ProgressBar
         progressBar.progressProperty().bind(task.progressProperty());
 
-        // Add progressBar to the statistics panel or another part of the UI
-        Platform.runLater(() -> {
-            statisticsPanel.getChildren().addAll(loadingLabel, progressBar); // Assuming statisticsPanel is accessible here
-        });
+        // Remove the loading container once the task is complete
+        task.setOnSucceeded(e -> Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer)));
 
-        // Remove the progressBar once the task is complete
-        task.setOnSucceeded(e -> Platform.runLater(() -> statisticsPanel.getChildren().removeAll(loadingLabel, progressBar)));
+        // Remove the loading container in case of failure
+        task.setOnFailed(e -> {
+            Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+            task.getException().printStackTrace();
+        });
 
         // Run the task in a background thread
         new Thread(task).start();
