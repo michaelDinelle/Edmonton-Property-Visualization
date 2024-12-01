@@ -20,8 +20,9 @@
     -fx-alignment: top-left;
 }
 
-.legend-item-color {
+.legend-item {
     -fx-border-color: black;
+    -fx-alignment: center-left;
 }
 
 /* Statistics Panel styles */

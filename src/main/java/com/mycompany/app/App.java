@@ -75,6 +75,7 @@ public class App extends Application {
     private StackPane rootStackPane;
 
     private VBox legend;
+    private HBox legendItem;
 
     private Button toggleStatsButton;
 
@@ -127,6 +128,7 @@ public class App extends Application {
         statisticsLabel.getStyleClass().add("statistics-label");
 
         legend.getStyleClass().add("legend");
+        legendItem.getStyleClass().add("legend-item");
 
         toggleStatsButton.getStyleClass().add("toggle-stats-button");
         filterButton.getStyleClass().add("filter-button");
@@ -322,8 +324,7 @@ public class App extends Application {
     }
 
     private HBox createLegendItem(String labelText, Color color) {
-        HBox legendItem = new HBox(5);
-        legendItem.setAlignment(Pos.CENTER_LEFT);
+        legendItem = new HBox(5);
 
         Label colorBox = new Label();
         colorBox.setPrefSize(15, 15);
