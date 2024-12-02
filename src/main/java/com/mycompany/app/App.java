@@ -17,18 +17,21 @@
 package com.mycompany.app;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.BasemapStyle;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.mapping.view.IdentifyGraphicsOverlayResult;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -99,19 +102,23 @@ public class App extends Application {
         addPropertiesToMap(propertiesClass.getProperties());
 
         // Initialize all UI components
-        MapView mapLayout = createMapLayout();
+        mapView = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
         VBox statisticsPanel = createStatisticsPanel();
         Button toggleStatsButton = createToggleButton();
 
         // Add all components to the StackPane in the correct order
-        setupStackPane(mapLayout, accordionFilterPanel, statisticsPanel, toggleStatsButton);
+        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton);
 
         //Add Button Functionality
         accountSearchButtonFunctionality();
         filterButtonFunctionality();
         removeFilterButtonFunctionality();
 
+        // Add click functionality to each point on the map
+        setupClickHandler();
+
+        // Create the scene, apply the styling and show it on the screen
         Scene scene = new Scene(rootStackPane);
         applyStylesToScene(scene);
         stage.setScene(scene);
@@ -134,8 +141,6 @@ public class App extends Application {
         filterButton.getStyleClass().add("filter-button");
         removeFilterButton.getStyleClass().add("remove-filter-button");
         accountSearchButton.getStyleClass().add("account-search-button");
-
-
     }
 
     private void initializeArcGISRuntime() {
@@ -178,6 +183,9 @@ public class App extends Application {
                     // Create the graphic
                     Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
                     Graphic graphic = new Graphic(point, symbol);
+
+                    graphic.getAttributes().put("accountID", property.getAccountID());
+
                     graphics.add(graphic);
 
                     // Update progress
@@ -190,23 +198,10 @@ public class App extends Application {
             }
         };
 
-        // Create ProgressBar and Loading Label
-        ProgressBar progressBar = new ProgressBar();
-        Label loadingLabel = new Label("Loading Data");
-        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
-
-        // Create a container for the loading UI
-        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
-        loadingContainer.setAlignment(Pos.CENTER);
-        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        loadingContainer.setPadding(new Insets(20));
+        VBox loadingContainer = createLoadingContainer("Loading Data", task);
 
         // Add the loading container to the StackPane
         Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
-
-        // Bind the task progress to the ProgressBar
-        progressBar.progressProperty().bind(task.progressProperty());
 
         // Remove the loading container once the task is complete
         task.setOnSucceeded(e -> Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer)));
@@ -505,21 +500,6 @@ public class App extends Application {
                 return;
             }
 
-            // Create a ProgressBar and Loading Label
-            ProgressBar progressBar = new ProgressBar();
-            Label loadingLabel = new Label("Applying Filter...");
-            loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-            loadingLabel.setStyle("-fx-text-fill: #2b5b84;");
-
-            // Create a container for the loading UI
-            VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
-            loadingContainer.setAlignment(Pos.CENTER);
-            loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-            loadingContainer.setPadding(new Insets(20));
-
-            // Add the loading container to the rootStackPane
-            Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
-
             // Background task for filtering
             Task<List<PropertyAssessment>> task = new Task<>() {
                 @Override
@@ -555,8 +535,10 @@ public class App extends Application {
                 }
             };
 
-            // Bind the task's progress to the ProgressBar
-            progressBar.progressProperty().bind(task.progressProperty());
+            VBox loadingContainer = createLoadingContainer("Applying Filter", task);
+
+            // Add the loading container to the rootStackPane
+            Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
 
             task.setOnSucceeded(e -> {
                 // Remove the loading container
@@ -692,20 +674,6 @@ public class App extends Application {
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
-        // Create a ProgressBar
-        ProgressBar progressBar = new ProgressBar();
-        Label loadingLabel = new Label("Loading Data");
-        loadingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        loadingLabel.setStyle("-fx-text-fill: #2b5b84");
-
-        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
-        loadingContainer.setAlignment(Pos.CENTER);
-        loadingContainer.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8); -fx-background-radius: 10;");
-        loadingContainer.setPadding(new Insets(20));
-
-        // Add the loading container to the StackPane
-        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
-
         // Background task for preparing graphics
         Task<List<Graphic>> task = new Task<>() {
             @Override
@@ -737,8 +705,10 @@ public class App extends Application {
             }
         };
 
-        // Bind the task progress to the ProgressBar
-        progressBar.progressProperty().bind(task.progressProperty());
+        VBox loadingContainer = createLoadingContainer("Loading Data", task);
+
+        // Add the loading container to the StackPane
+        Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer)); // rootStackPane is the root of your Scene
 
         task.setOnSucceeded(e -> {
             // Remove the loading container
@@ -761,6 +731,70 @@ public class App extends Application {
 
         // Start the task in a background thread
         new Thread(task).start();
+    }
+
+    private VBox createLoadingContainer(String loadingMessage, Task<?> task) {
+        // Create ProgressBar and Loading Label
+        ProgressBar progressBar = new ProgressBar();
+        Label loadingLabel = new Label(loadingMessage);
+
+        // Apply CSS class to the loading label
+        loadingLabel.getStyleClass().add("loading-label");
+
+        // Create a container for the loading UI
+        VBox loadingContainer = new VBox(10, loadingLabel, progressBar);
+
+        // Apply CSS class to the loading container
+        loadingContainer.getStyleClass().add("loading-container");
+        loadingContainer.setAlignment(Pos.CENTER);
+
+        // Bind the task progress to the ProgressBar
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        return loadingContainer;
+    }
+
+    private void setupClickHandler() {
+        mapView.setOnMouseClicked(event -> {
+            if (event.isStillSincePress()) { // Ensure it's not a drag
+                Point2D screenPoint = new Point2D(event.getX(), event.getY()); // Screen coordinates where the user clicked
+
+                // Perform a hit test on the GraphicsOverlay
+                ListenableFuture<IdentifyGraphicsOverlayResult> future = mapView.identifyGraphicsOverlayAsync(graphicsOverlay, screenPoint, 10, false, 1);
+
+                // Add a listener to process the result once it's available
+                future.addDoneListener(() -> {
+                    try {
+                        // Get the result of the identify operation
+                        IdentifyGraphicsOverlayResult result = future.get();
+
+                        // Retrieve the list of identified graphics
+                        List<Graphic> graphics = result.getGraphics();
+
+                        if (!graphics.isEmpty()) {
+                            // Get the first graphic that was clicked
+                            Graphic clickedGraphic = graphics.get(0);
+
+                            // Retrieve the accountID attribute
+                            Integer accountID = (Integer) clickedGraphic.getAttributes().get("accountID");
+
+                            if (accountID != null) {
+                                // Use the accountID to find the PropertyAssessment object
+                                PropertyAssessment property = propertiesClass.getPropertyByAccountID(accountID);
+
+                                // Display the property info in the info area
+                                if (property != null) {
+                                    displayPropertyInfo(property, propertyInfoArea);
+                                    highlightSelectedProperty(property);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace(); // Handle exceptions such as InterruptedException or ExecutionException
+                    }
+                });
+            }
+        });
     }
 
     @Override
