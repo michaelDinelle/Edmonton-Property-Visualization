@@ -17,18 +17,21 @@
 package com.mycompany.app;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.BasemapStyle;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.mapping.view.IdentifyGraphicsOverlayResult;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -112,6 +115,9 @@ public class App extends Application {
         filterButtonFunctionality();
         removeFilterButtonFunctionality();
 
+        // Add click functionality to each point on the map
+        setupClickHandler();
+
         // Create the scene, apply the styling and show it on the screen
         Scene scene = new Scene(rootStackPane);
         applyStylesToScene(scene);
@@ -177,6 +183,9 @@ public class App extends Application {
                     // Create the graphic
                     Point point = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
                     Graphic graphic = new Graphic(point, symbol);
+
+                    graphic.getAttributes().put("accountID", property.getAccountID());
+
                     graphics.add(graphic);
 
                     // Update progress
@@ -743,6 +752,49 @@ public class App extends Application {
         progressBar.progressProperty().bind(task.progressProperty());
 
         return loadingContainer;
+    }
+
+    private void setupClickHandler() {
+        mapView.setOnMouseClicked(event -> {
+            if (event.isStillSincePress()) { // Ensure it's not a drag
+                Point2D screenPoint = new Point2D(event.getX(), event.getY()); // Screen coordinates where the user clicked
+
+                // Perform a hit test on the GraphicsOverlay
+                ListenableFuture<IdentifyGraphicsOverlayResult> future = mapView.identifyGraphicsOverlayAsync(graphicsOverlay, screenPoint, 10, false, 1);
+
+                // Add a listener to process the result once it's available
+                future.addDoneListener(() -> {
+                    try {
+                        // Get the result of the identify operation
+                        IdentifyGraphicsOverlayResult result = future.get();
+
+                        // Retrieve the list of identified graphics
+                        List<Graphic> graphics = result.getGraphics();
+
+                        if (!graphics.isEmpty()) {
+                            // Get the first graphic that was clicked
+                            Graphic clickedGraphic = graphics.get(0);
+
+                            // Retrieve the accountID attribute
+                            Integer accountID = (Integer) clickedGraphic.getAttributes().get("accountID");
+
+                            if (accountID != null) {
+                                // Use the accountID to find the PropertyAssessment object
+                                PropertyAssessment property = propertiesClass.getPropertyByAccountID(accountID);
+
+                                // Display the property info in the info area
+                                if (property != null) {
+                                    displayPropertyInfo(property, propertyInfoArea);
+                                    highlightSelectedProperty(property);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace(); // Handle exceptions such as InterruptedException or ExecutionException
+                    }
+                });
+            }
+        });
     }
 
     @Override
