@@ -567,16 +567,46 @@ public class App extends Application {
     }
 
     private void removeFilterButtonFunctionality() {
-        //Add functionality to remove filters button
-        removeFilterButton.setOnAction(event ->{
+        removeFilterButton.setOnAction(event -> {
+            // Create a background task to simulate progress
+            Task<Void> task = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    // Simulate progress
+                    for (int i = 0; i <= 10; i++) {
+                        updateProgress(i, 10);
+                        Thread.sleep(50); // Simulated delay
+                    }
+                    return null;
+                }
+            };
 
-            graphicsOverlay.getGraphics().clear();
-            addPropertiesToMap(propertiesClass.getProperties());
-            Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
-            mapView.setViewpointCenterAsync(edmontonViewPoint, 15000);
+            // Create a loading container with a progress bar and label
+            VBox loadingContainer = createLoadingContainer("Removing Filters...", task);
 
+            // Add the loading container to the root stack pane
+            Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
+
+            // When the task succeeds, clear the filters and reset the map
+            task.setOnSucceeded(e -> {
+                Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+                graphicsOverlay.getGraphics().clear(); // Clear all graphics
+                addPropertiesToMap(propertiesClass.getProperties()); // Re-add all properties
+                Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
+                mapView.setViewpointCenterAsync(edmontonViewPoint, 15000); // Reset the view
+            });
+
+            // Handle task failure
+            task.setOnFailed(e -> {
+                Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+                e.getSource().getException().printStackTrace();
+            });
+
+            // Run the task in a background thread
+            new Thread(task).start();
         });
     }
+
 
 
     private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
