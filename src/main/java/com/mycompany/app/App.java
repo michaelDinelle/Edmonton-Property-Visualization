@@ -42,6 +42,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,12 +86,19 @@ public class App extends Application {
 
     private long assessedValueCenter;
 
+    private NumberFormat numberFormat;
+
     public static void main(String[] args) {
         Application.launch(args);
     }
 
     @Override
     public void start(Stage stage) {
+
+
+        //For formatting assessed value into a currency
+        numberFormat = new DecimalFormat("#,###");
+
         initializeArcGISRuntime();
 
         initializeStage(stage);
@@ -723,9 +731,6 @@ public class App extends Application {
         if (property == null) {
             propertyInfoArea.setText("No property information available.");
         } else {
-
-            //For formatting assessed value into a currency
-            DecimalFormat numberFormat = new DecimalFormat("#,###");
 
             propertyInfoArea.setText(String.format(
                             "Account Number: %s%n" +
