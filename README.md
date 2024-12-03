@@ -20,7 +20,7 @@
 
 Scott MacAulay - https://github.com/John-smith088
 
-Michael Dinelle
+Michael Dinelle - https://github.com/michaelDinelle
 
 Brighton ?
 
