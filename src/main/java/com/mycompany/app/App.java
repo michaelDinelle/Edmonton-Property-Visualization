@@ -650,60 +650,62 @@ public class App extends Application {
 
         if (currentAssessedValue == 0){
             return Color.BLACK;
-
         }
         //-50% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.5) {
-
-            return Color.web("#4b2ca3"); // Royal Blue
+            return Color.web("#4b0036"); //Black plum
         }
         //-30% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.70){
-            return Color.web("#0077bb"); // Bright Azure
+            return Color.web("#4b2ca3"); // Royal Blue
         }
 
         //-15% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.85) {
-            return Color.web("#00b891"); // Vivid Turquoise
+            return Color.web("#0077bb"); // Bright Azure
         }
         //-5 % off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.95) {
-            return Color.web("#6ccc63"); // Spring Green
+            return Color.web("#00b891"); // Vivid Turquoise
         }
         //-2% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.98) {
-            return Color.web("#d9ed4c"); // Bright Lime
+            return Color.web("#6ccc63"); // Spring Green
         }
 
         //At Center
         else if (currentAssessedValue == assessedValueCenter) {
-            return Color.web("#ffff66"); // Pure Yellow
+            return Color.web("#d9ed4c"); // Bright Lime
         }
 
         //+2% off of center
         else if (currentAssessedValue <= assessedValueCenter * 1.02) {
-            return Color.web("#ffcc33"); // Bright Amber
+            return Color.web("#ffff66"); // Pure Yellow
         }
         //+5% off of center
         else if (currentAssessedValue <= assessedValueCenter * 1.05 ) {
-            return Color.web("#ff8c00"); // Vivid Orange
+            return Color.web("#ffcc33"); // Bright Amber
         }
         //+15% of center
         else if (currentAssessedValue <= assessedValueCenter * 1.15 )  {
-            return Color.web("#e64a19"); // Deep Coral
+
+            return Color.web("#ff8c00"); // Vivid Orange
         }
         //+30%  of center
         else if (currentAssessedValue <= assessedValueCenter * 1.30) {
-            return Color.web("#c70039"); // Crimson
+            return Color.web("#e64a19"); // Deep Coral
         }
         // +50% of center
         else if (currentAssessedValue <= assessedValueCenter * 1.5){
+
+            return Color.web("#c70039"); // Crimson
+        }
+
+        // >50% of center
+        else{
             return Color.web("#800026"); // Dark Burgundy
         }
 
-        else{
-            return Color.web("#4b0036"); //Black plum
-        }
     }
 
 
