@@ -20,6 +20,12 @@
     -fx-alignment: top-left;
 }
 
+.legend-label{
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
+
 .legend-item {
     -fx-alignment: center-left;
 }

@@ -79,6 +79,7 @@ public class App extends Application {
 
     private VBox legend;
     private HBox legendItem;
+    private Label legendLabel;
 
     private Button toggleStatsButton;
 
@@ -141,6 +142,7 @@ public class App extends Application {
 
         legend.getStyleClass().add("legend");
         legendItem.getStyleClass().add("legend-item");
+        legendLabel.getStyleClass().add("legend-label");
 
         toggleStatsButton.getStyleClass().add("toggle-stats-button");
         filterButton.getStyleClass().add("filter-button");
@@ -269,6 +271,8 @@ public class App extends Application {
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
+        legendLabel = new Label("Legend");
+
         statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
@@ -289,6 +293,7 @@ public class App extends Application {
 
 
         statisticsPanel.getChildren().addAll(
+                legendLabel,
                 legend,
                 statisticsLabel,
                 propertyInfoArea,        // Add property info area for displaying details
