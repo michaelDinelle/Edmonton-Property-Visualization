@@ -315,12 +315,18 @@ public class App extends Application {
         // Define legend items
         legend.getChildren().addAll(
                 createLegendItem("Zero Value", Color.BLACK),
-                createLegendItem("Below $50,000", Color.DARKBLUE),
-                createLegendItem("$50,000 - $200,000", Color.BLUE),
-                createLegendItem("$200,000 - $500,000", Color.YELLOW),
-                createLegendItem("$500,000 - $1,000,000", Color.ORANGE),
-                createLegendItem("$1,000,000 - $5,000,000", Color.RED),
-                createLegendItem("Above $5,000,000", Color.DARKRED)
+                createLegendItem("50% Below Center", Color.web("#4b0036")),
+                createLegendItem("$30% Below Center", Color.web("#4b2ca3")),
+                createLegendItem("$15% Below Center", Color.web("#0077bb")),
+                createLegendItem("$5% Below Center", Color.web("#00b891")),
+                createLegendItem("$2% Below Center", Color.web("#6ccc63")),
+                createLegendItem("Center", Color.web("#d9ed4c")),
+                createLegendItem("$2% Above Center", Color.web("#ffff66")),
+                createLegendItem("$5% Above Center", Color.web("#ffcc33")),
+                createLegendItem("$15% Above Center", Color.web("#ff8c00")),
+                createLegendItem("$30% Above Center", Color.web("#e64a19")),
+                createLegendItem("$50% Above Center", Color.web("#c70039")),
+                createLegendItem("Selected", Color.MAGENTA)
         );
 
         return legend;
@@ -658,56 +664,52 @@ public class App extends Application {
         }
         //-50% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.5) {
-            return Color.web("#4b0036"); //Black plum
+            return Color.web("#4b2ca3"); // Royal Blue
         }
         //-30% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.70){
-            return Color.web("#4b2ca3"); // Royal Blue
+            return Color.web("#0077bb"); // Bright Azure
         }
 
         //-15% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.85) {
-            return Color.web("#0077bb"); // Bright Azure
+            return Color.web("#00b891"); // Vivid Turquoise
         }
         //-5 % off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.95) {
-            return Color.web("#00b891"); // Vivid Turquoise
+            return Color.web("#6ccc63"); // Spring Green
         }
         //-2% off of center
         else if (currentAssessedValue <= assessedValueCenter * 0.98) {
-            return Color.web("#6ccc63"); // Spring Green
+
+            return Color.web("#d9ed4c"); // Bright Lime
         }
 
         //At Center
         else if (currentAssessedValue == assessedValueCenter) {
-            return Color.web("#d9ed4c"); // Bright Lime
+            return Color.web("#ffff66"); // Pure Yellow
         }
 
         //+2% off of center
         else if (currentAssessedValue <= assessedValueCenter * 1.02) {
-            return Color.web("#ffff66"); // Pure Yellow
+            return Color.web("#ffcc33"); // Bright Amber
         }
         //+5% off of center
         else if (currentAssessedValue <= assessedValueCenter * 1.05 ) {
-            return Color.web("#ffcc33"); // Bright Amber
+            return Color.web("#ff8c00"); // Vivid Orange
         }
         //+15% of center
         else if (currentAssessedValue <= assessedValueCenter * 1.15 )  {
-
-            return Color.web("#ff8c00"); // Vivid Orange
+            return Color.web("#e64a19"); // Deep Coral
         }
         //+30%  of center
         else if (currentAssessedValue <= assessedValueCenter * 1.30) {
-            return Color.web("#e64a19"); // Deep Coral
-        }
-        // +50% of center
-        else if (currentAssessedValue <= assessedValueCenter * 1.5){
 
             return Color.web("#c70039"); // Crimson
         }
-
-        // >50% of center
+        // +50% of center
         else{
+
             return Color.web("#800026"); // Dark Burgundy
         }
 
