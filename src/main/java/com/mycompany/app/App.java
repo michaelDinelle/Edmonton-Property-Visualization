@@ -315,17 +315,17 @@ public class App extends Application {
         // Define legend items
         legend.getChildren().addAll(
                 createLegendItem("Zero Value", Color.BLACK),
-                createLegendItem("50% Below Center", Color.web("#4b0036")),
-                createLegendItem("$30% Below Center", Color.web("#4b2ca3")),
-                createLegendItem("$15% Below Center", Color.web("#0077bb")),
-                createLegendItem("$5% Below Center", Color.web("#00b891")),
-                createLegendItem("$2% Below Center", Color.web("#6ccc63")),
-                createLegendItem("Center", Color.web("#d9ed4c")),
-                createLegendItem("$2% Above Center", Color.web("#ffff66")),
-                createLegendItem("$5% Above Center", Color.web("#ffcc33")),
-                createLegendItem("$15% Above Center", Color.web("#ff8c00")),
-                createLegendItem("$30% Above Center", Color.web("#e64a19")),
-                createLegendItem("$50% Above Center", Color.web("#c70039")),
+                createLegendItem("50% Below Center", Color.web("#4b2ca3")),
+                createLegendItem("$30% Below Center", Color.web("#0077bb")),
+                createLegendItem("$15% Below Center", Color.web("#00b891")),
+                createLegendItem("$5% Below Center", Color.web("#6ccc63")),
+                createLegendItem("$2% Below Center", Color.web("#d9ed4c")),
+                createLegendItem(String.format("Center: %d",assessedValueCenter), Color.web("#ffff66")),
+                createLegendItem("$2% Above Center", Color.web("#ffcc33")),
+                createLegendItem("$5% Above Center", Color.web("#ff8c00")),
+                createLegendItem("$15% Above Center", Color.web("#e64a19")),
+                createLegendItem("$30% Above Center", Color.web("#c70039")),
+                createLegendItem("$50% Above Center", Color.web("#800026")),
                 createLegendItem("Selected", Color.MAGENTA)
         );
 
