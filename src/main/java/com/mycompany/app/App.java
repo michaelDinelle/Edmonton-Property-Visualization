@@ -82,6 +82,8 @@ public class App extends Application {
 
     private Button toggleStatsButton;
 
+    private long assessedValueCenter;
+
     public static void main(String[] args) {
         Application.launch(args);
     }
@@ -97,6 +99,9 @@ public class App extends Application {
 
         // Load property data
         loadPropertyData();
+
+        //Choose Median to be center
+        assessedValueCenter = propertiesClass.getMedian();
 
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
@@ -614,31 +619,95 @@ public class App extends Application {
         addPropertiesToMap(filteredProperties);
     }
 
-    private Color getAssesmentColor(long assessedValue){
+//    private Color getAssesmentColor(long assessedValue){
+//
+//        if (assessedValue == 0){
+//            return Color.BLACK;
+//        }
+//
+//        if (assessedValue < 50000){
+//            return Color.DARKBLUE;
+//
+//        }
+//        else if (assessedValue < 200000) {
+//            return Color.BLUE;
+//        }
+//        else if (assessedValue < 500000) {
+//            return Color.YELLOW;
+//        }
+//        else if (assessedValue < 1000000) {
+//            return Color.ORANGE;
+//        }
+//        else if (assessedValue < 50000000)  {
+//            return Color.RED;
+//        } else {
+//            return Color.DARKRED;
+//        }
+//    }
 
-        if (assessedValue == 0){
+    // Altered version of the Spectral 11 Color Palette
+    private Color getAssesmentColor(long currentAssessedValue){
+
+        if (currentAssessedValue == 0){
             return Color.BLACK;
-        }
-
-        if (assessedValue < 50000){
-            return Color.DARKBLUE;
 
         }
-        else if (assessedValue < 200000) {
-            return Color.BLUE;
+        //-50% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.5) {
+
+            return Color.web("#4b2ca3"); // Royal Blue
         }
-        else if (assessedValue < 500000) {
-            return Color.YELLOW;
+        //-30% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.70){
+            return Color.web("#0077bb"); // Bright Azure
         }
-        else if (assessedValue < 1000000) {
-            return Color.ORANGE;
+
+        //-15% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.85) {
+            return Color.web("#00b891"); // Vivid Turquoise
         }
-        else if (assessedValue < 50000000)  {
-            return Color.RED;
-        } else {
-            return Color.DARKRED;
+        //-5 % off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.95) {
+            return Color.web("#6ccc63"); // Spring Green
+        }
+        //-2% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.98) {
+            return Color.web("#d9ed4c"); // Bright Lime
+        }
+
+        //At Center
+        else if (currentAssessedValue == assessedValueCenter) {
+            return Color.web("#ffff66"); // Pure Yellow
+        }
+
+        //+2% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.02) {
+            return Color.web("#ffcc33"); // Bright Amber
+        }
+        //+5% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.05 ) {
+            return Color.web("#ff8c00"); // Vivid Orange
+        }
+        //+15% of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.15 )  {
+            return Color.web("#e64a19"); // Deep Coral
+        }
+        //+30%  of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.30) {
+            return Color.web("#c70039"); // Crimson
+        }
+        // +50% of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.5){
+            return Color.web("#800026"); // Dark Burgundy
+        }
+
+        else{
+            return Color.web("#4b0036"); //Black plum
         }
     }
+
+
+
 
     // Display property information
     private void displayPropertyInfo(PropertyAssessment property, TextArea propertyInfoArea) {
