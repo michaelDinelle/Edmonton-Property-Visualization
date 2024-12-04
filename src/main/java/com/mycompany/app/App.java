@@ -509,7 +509,7 @@ public class App extends Application {
                     Alert alert = new Alert(Alert.AlertType.WARNING, "No property found with the given account number.", ButtonType.OK);
                     alert.showAndWait();
                 } else {
-                    displayPropertyInfo(property, propertyInfoArea);
+                    displayPropertyInfo(property);
                     highlightSelectedProperty(property);
                 }
             } catch (NumberFormatException e) {
@@ -583,7 +583,7 @@ public class App extends Application {
                 List<PropertyAssessment> filteredProperties = task.getValue();
                 if (filteredProperties != null) {
                     refreshLegend();
-                    displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
+                    displayPropertyStatisticsInfo(filteredProperties, filterValue);
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
@@ -633,6 +633,9 @@ public class App extends Application {
                 mapView.setViewpointCenterAsync(edmontonViewPoint, 15000); // Reset the view
                 assessedValueCenter = propertiesClass.getMedian();
                 //Redraw legend
+
+                propertyInfoArea.setText("");
+                propertyStatisticsArea.setText("");
 
             });
 
@@ -717,7 +720,7 @@ public class App extends Application {
 
 
     // Display property information
-    private void displayPropertyInfo(PropertyAssessment property, TextArea propertyInfoArea) {
+    private void displayPropertyInfo(PropertyAssessment property) {
         if (property == null) {
             propertyInfoArea.setText("No property information available.");
         } else {
@@ -745,18 +748,18 @@ public class App extends Application {
 
 
     // Display property information
-    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties, TextArea propertyInfoArea, String filterValue) {
+    private void displayPropertyStatisticsInfo(List<PropertyAssessment> properties , String filterValue) {
 
         PropertyAssessments propertyAssessments = new PropertyAssessments(properties);
 
         if (properties == null) {
-            propertyInfoArea.setText("No property statistics available.");
+            propertyStatisticsArea.setText("No property statistics available.");
         } else {
 
             //For formatting assessed value into a currency
             DecimalFormat numberFormat = new DecimalFormat("#,###");
 
-            propertyInfoArea.setText("Statistics: " + filterValue + "\n" + String.format(
+            propertyStatisticsArea.setText("Statistics: " + filterValue + "\n" + String.format(
                             "Number of properties: %s%n" +
                             "Minimum property value: $%s%n" +
                             "Maximum property value: $%s%n"  +
@@ -887,7 +890,7 @@ public class App extends Application {
 
                                 // Display the property info in the info area
                                 if (property != null) {
-                                    displayPropertyInfo(property, propertyInfoArea);
+                                    displayPropertyInfo(property);
                                     highlightSelectedProperty(property);
                                 }
                             }
