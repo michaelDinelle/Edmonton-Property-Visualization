@@ -42,6 +42,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,8 +80,13 @@ public class App extends Application {
 
     private VBox legend;
     private HBox legendItem;
+    private Label legendLabel;
 
     private Button toggleStatsButton;
+
+    private long assessedValueCenter;
+
+    private NumberFormat numberFormat;
 
     public static void main(String[] args) {
         Application.launch(args);
@@ -88,6 +94,11 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
+
+
+        //For formatting assessed value into a currency
+        numberFormat = new DecimalFormat("#,###");
+
         initializeArcGISRuntime();
 
         initializeStage(stage);
@@ -98,14 +109,17 @@ public class App extends Application {
         // Load property data
         loadPropertyData();
 
+        //Choose Median to be center
+        assessedValueCenter = propertiesClass.getMedian();
+
         // Add all properties to the map initially
         addPropertiesToMap(propertiesClass.getProperties());
 
         // Initialize all UI components
         mapView = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
-        VBox statisticsPanel = createStatisticsPanel();
-        Button toggleStatsButton = createToggleButton();
+        statisticsPanel = createStatisticsPanel();
+        toggleStatsButton = createToggleButton();
 
         // Add all components to the StackPane in the correct order
         setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton);
@@ -136,6 +150,7 @@ public class App extends Application {
 
         legend.getStyleClass().add("legend");
         legendItem.getStyleClass().add("legend-item");
+        legendLabel.getStyleClass().add("legend-label");
 
         toggleStatsButton.getStyleClass().add("toggle-stats-button");
         filterButton.getStyleClass().add("filter-button");
@@ -264,6 +279,8 @@ public class App extends Application {
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
+        legendLabel = new Label("Legend");
+
         statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
@@ -284,6 +301,7 @@ public class App extends Application {
 
 
         statisticsPanel.getChildren().addAll(
+                legendLabel,
                 legend,
                 statisticsLabel,
                 propertyInfoArea,        // Add property info area for displaying details
@@ -304,13 +322,19 @@ public class App extends Application {
 
         // Define legend items
         legend.getChildren().addAll(
-                createLegendItem("Zero Value", Color.BLACK),
-                createLegendItem("Below $50,000", Color.DARKBLUE),
-                createLegendItem("$50,000 - $200,000", Color.BLUE),
-                createLegendItem("$200,000 - $500,000", Color.YELLOW),
-                createLegendItem("$500,000 - $1,000,000", Color.ORANGE),
-                createLegendItem("$1,000,000 - $5,000,000", Color.RED),
-                createLegendItem("Above $5,000,000", Color.DARKRED)
+                createLegendItem("Zero Value: $0", Color.BLACK),
+                createLegendItem(String.format("50%% Below Center: $%s", numberFormat.format(assessedValueCenter*0.5)), Color.web("#4b2ca3")),
+                createLegendItem(String.format("$30%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.7)), Color.web("#0077bb")),
+                createLegendItem(String.format("$15%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.85)), Color.web("#00b891")),
+                createLegendItem(String.format("$5%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.95)), Color.web("#6ccc63")),
+                createLegendItem(String.format("$2%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.98)), Color.web("#d9ed4c")),
+                createLegendItem(String.format("Center: $%s",numberFormat.format(assessedValueCenter)), Color.web("#ffff66")),
+                createLegendItem(String.format("$2%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.02)),Color.web("#ffcc33")),
+                createLegendItem(String.format("$5%% Above Center: $%s",numberFormat.format(assessedValueCenter * 1.05)) ,Color.web("#ff8c00")),
+                createLegendItem(String.format("$15%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.15)), Color.web("#e64a19")),
+                createLegendItem(String.format("$30%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.3)) ,Color.web("#c70039")),
+                createLegendItem(String.format("$50%% Above Center: $%s",numberFormat.format(assessedValueCenter * 1.5)) ,Color.web("#800026")),
+                createLegendItem("Selected", Color.MAGENTA)
         );
 
         return legend;
@@ -509,6 +533,7 @@ public class App extends Application {
                         filteredProperties = propertiesClass.getProperties().stream()
                                 .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
                                 .collect(Collectors.toList());
+
                     } else if (selectedFilter.equals("Assessment Class")) {
                         filteredProperties = propertiesClass.getProperties().stream()
                                 .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
@@ -521,6 +546,7 @@ public class App extends Application {
                         return null; // Invalid filter
                     }
 
+
                     // Simulate progress
                     for (int i = 0; i < 10; i++) {
                         updateProgress(i + 1, 10);
@@ -530,6 +556,10 @@ public class App extends Application {
                             Thread.currentThread().interrupt();
                         }
                     }
+
+                    //Recenter Median to group median (Works needs to uncenter though)
+                    assessedValueCenter =  new PropertyAssessments(filteredProperties).getMedian();
+                    //Need to Redraw the legend
 
                     return filteredProperties;
                 }
@@ -594,6 +624,10 @@ public class App extends Application {
                 addPropertiesToMap(propertiesClass.getProperties()); // Re-add all properties
                 Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
                 mapView.setViewpointCenterAsync(edmontonViewPoint, 15000); // Reset the view
+
+                assessedValueCenter = propertiesClass.getMedian();
+                //Redraw legend
+
             });
 
             // Handle task failure
@@ -614,40 +648,73 @@ public class App extends Application {
         addPropertiesToMap(filteredProperties);
     }
 
-    private Color getAssesmentColor(long assessedValue){
+    // Altered version of the Spectral 11 Color Palette
+    private Color getAssesmentColor(long currentAssessedValue){
 
-        if (assessedValue == 0){
+        if (currentAssessedValue == 0){
             return Color.BLACK;
         }
+        //-50% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.5) {
+            return Color.web("#4b2ca3"); // Royal Blue
+        }
+        //-30% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.70){
+            return Color.web("#0077bb"); // Bright Azure
+        }
 
-        if (assessedValue < 50000){
-            return Color.DARKBLUE;
+        //-15% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.85) {
+            return Color.web("#00b891"); // Vivid Turquoise
+        }
+        //-5 % off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.95) {
+            return Color.web("#6ccc63"); // Spring Green
+        }
+        //-2% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 0.98) {
 
+            return Color.web("#d9ed4c"); // Bright Lime
         }
-        else if (assessedValue < 200000) {
-            return Color.BLUE;
+
+        //At Center
+        else if (currentAssessedValue == assessedValueCenter) {
+            return Color.web("#ffff66"); // Pure Yellow
         }
-        else if (assessedValue < 500000) {
-            return Color.YELLOW;
+
+        //+2% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.02) {
+            return Color.web("#ffcc33"); // Bright Amber
         }
-        else if (assessedValue < 1000000) {
-            return Color.ORANGE;
+        //+5% off of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.05 ) {
+            return Color.web("#ff8c00"); // Vivid Orange
         }
-        else if (assessedValue < 50000000)  {
-            return Color.RED;
-        } else {
-            return Color.DARKRED;
+        //+15% of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.15 )  {
+            return Color.web("#e64a19"); // Deep Coral
         }
+        //+30%  of center
+        else if (currentAssessedValue <= assessedValueCenter * 1.30) {
+
+            return Color.web("#c70039"); // Crimson
+        }
+        // +50% of center
+        else{
+
+            return Color.web("#800026"); // Dark Burgundy
+        }
+
     }
+
+
+
 
     // Display property information
     private void displayPropertyInfo(PropertyAssessment property, TextArea propertyInfoArea) {
         if (property == null) {
             propertyInfoArea.setText("No property information available.");
         } else {
-
-            //For formatting assessed value into a currency
-            DecimalFormat numberFormat = new DecimalFormat("#,###");
 
             propertyInfoArea.setText(String.format(
                             "Account Number: %s%n" +
