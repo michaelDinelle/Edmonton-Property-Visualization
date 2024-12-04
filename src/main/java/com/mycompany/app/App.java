@@ -322,18 +322,18 @@ public class App extends Application {
 
         // Define legend items
         legend.getChildren().addAll(
-                createLegendItem("Zero Value", Color.BLACK),
-                createLegendItem("50% Below Center", Color.web("#4b2ca3")),
-                createLegendItem("$30% Below Center", Color.web("#0077bb")),
-                createLegendItem("$15% Below Center", Color.web("#00b891")),
-                createLegendItem("$5% Below Center", Color.web("#6ccc63")),
-                createLegendItem("$2% Below Center", Color.web("#d9ed4c")),
+                createLegendItem("Zero Value: $0", Color.BLACK),
+                createLegendItem(String.format("50%% Below Center: $%s", numberFormat.format(assessedValueCenter*0.5)), Color.web("#4b2ca3")),
+                createLegendItem(String.format("$30%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.7)), Color.web("#0077bb")),
+                createLegendItem(String.format("$15%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.85)), Color.web("#00b891")),
+                createLegendItem(String.format("$5%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.95)), Color.web("#6ccc63")),
+                createLegendItem(String.format("$2%% Below Center: $%s", numberFormat.format(assessedValueCenter * 0.98)), Color.web("#d9ed4c")),
                 createLegendItem(String.format("Center: $%s",numberFormat.format(assessedValueCenter)), Color.web("#ffff66")),
-                createLegendItem("$2% Above Center", Color.web("#ffcc33")),
-                createLegendItem("$5% Above Center", Color.web("#ff8c00")),
-                createLegendItem("$15% Above Center", Color.web("#e64a19")),
-                createLegendItem("$30% Above Center", Color.web("#c70039")),
-                createLegendItem("$50% Above Center", Color.web("#800026")),
+                createLegendItem(String.format("$2%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.02)),Color.web("#ffcc33")),
+                createLegendItem(String.format("$5%% Above Center: $%s",numberFormat.format(assessedValueCenter * 1.05)) ,Color.web("#ff8c00")),
+                createLegendItem(String.format("$15%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.15)), Color.web("#e64a19")),
+                createLegendItem(String.format("$30%% Above Center: $%s", numberFormat.format(assessedValueCenter * 1.3)) ,Color.web("#c70039")),
+                createLegendItem(String.format("$50%% Above Center: $%s",numberFormat.format(assessedValueCenter * 1.5)) ,Color.web("#800026")),
                 createLegendItem("Selected", Color.MAGENTA)
         );
 
