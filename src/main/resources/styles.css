@@ -87,6 +87,23 @@
     -fx-text-fill: white;
 }
 
+/* Pie chart styles */
+.pie-chart {
+    -fx-border-color: black;
+    -fx-border-width: 1;
+}
+
+.pie-chart-content {
+    -fx-translate-y: -15px;
+    -fx-translate-x: -4px;
+}
+
+.pie-chart-title {
+    -fx-font-size: 15px;
+    -fx-padding: 10px 0px 0px 10px;
+    -fx-translate-x: -60;
+}
+
 /* Loading container styles */
 .loading-container {
     -fx-background-color: rgba(255, 255, 255, 0.8);

@@ -29,6 +29,8 @@ import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javafx.scene.chart.PieChart;
 
 public class App extends Application {
     // Global variables that might need to change
@@ -81,6 +84,8 @@ public class App extends Application {
     private VBox legend;
     private HBox legendItem;
     private Label legendLabel;
+
+    private PieChart classesPieChart;
 
     private Button toggleStatsButton;
 
@@ -151,6 +156,8 @@ public class App extends Application {
         legend.getStyleClass().add("legend");
         legendItem.getStyleClass().add("legend-item");
         legendLabel.getStyleClass().add("legend-label");
+
+        classesPieChart.getStyleClass().add("pie-chart");
 
         toggleStatsButton.getStyleClass().add("toggle-stats-button");
         filterButton.getStyleClass().add("filter-button");
@@ -298,6 +305,14 @@ public class App extends Application {
         propertyStatisticsArea.setWrapText(true);
         propertyStatisticsArea.setPromptText("Property Group Statistics");
 
+        // Initialize pie chart
+        classesPieChart = new PieChart();
+        classesPieChart.setVisible(false);
+        classesPieChart.setManaged(false);
+        classesPieChart.setLegendVisible(false);
+        classesPieChart.setMinHeight(0);
+        classesPieChart.setMinWidth(0);
+
 
 
         statisticsPanel.getChildren().addAll(
@@ -305,6 +320,7 @@ public class App extends Application {
                 legend,
                 statisticsLabel,
                 propertyInfoArea,        // Add property info area for displaying details
+                classesPieChart,        // Add pie chart displaying property assessment classes
                 propertyStatisticsArea  // Add statistics area for group data
         );
 
@@ -510,6 +526,7 @@ public class App extends Application {
                     alert.showAndWait();
                 } else {
                     displayPropertyInfo(property);
+                    displayPieChart(property, classesPieChart);
                     highlightSelectedProperty(property);
                 }
             } catch (NumberFormatException e) {
@@ -776,6 +793,30 @@ public class App extends Application {
         }
     }
 
+    // Display pie chart of property assessment classes
+    private void displayPieChart(PropertyAssessment property, PieChart classesPieChart) {
+        classesPieChart.getData().clear();
+
+        ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
+                new PieChart.Data(property.getAssessmentClass().getAssessmentClass1(), property.getAssessmentClass().getAssessmentPercentage1()),
+                new PieChart.Data(property.getAssessmentClass().getAssessmentClass2(), property.getAssessmentClass().getAssessmentPercentage2()),
+                new PieChart.Data(property.getAssessmentClass().getAssessmentClass3(), property.getAssessmentClass().getAssessmentPercentage3())
+        );
+        // Only add valid entries
+        pieChartData.removeIf(data -> data.getPieValue() == 0 || data.getName().isEmpty() || data.getName() == null);
+
+        classesPieChart.setData(pieChartData);
+
+        classesPieChart.setClockwise(true);
+        classesPieChart.setStartAngle(180);
+        classesPieChart.setVisible(true);
+        classesPieChart.setManaged(true);
+        classesPieChart.setTitle("Assessment Classes");
+        classesPieChart.setLabelLineLength(8);
+        classesPieChart.setMaxHeight(200);
+        classesPieChart.setStyle("-fx-padding: 0, -5, -15, -5");
+
+    }
 
 
     // Highlight selected property
