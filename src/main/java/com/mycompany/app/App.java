@@ -118,8 +118,8 @@ public class App extends Application {
         // Initialize all UI components
         mapView = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
-        VBox statisticsPanel = createStatisticsPanel();
-        Button toggleStatsButton = createToggleButton();
+        statisticsPanel = createStatisticsPanel();
+        toggleStatsButton = createToggleButton();
 
         // Add all components to the StackPane in the correct order
         setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton);
@@ -533,6 +533,7 @@ public class App extends Application {
                         filteredProperties = propertiesClass.getProperties().stream()
                                 .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
                                 .collect(Collectors.toList());
+
                     } else if (selectedFilter.equals("Assessment Class")) {
                         filteredProperties = propertiesClass.getProperties().stream()
                                 .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
@@ -545,6 +546,7 @@ public class App extends Application {
                         return null; // Invalid filter
                     }
 
+
                     // Simulate progress
                     for (int i = 0; i < 10; i++) {
                         updateProgress(i + 1, 10);
@@ -554,6 +556,10 @@ public class App extends Application {
                             Thread.currentThread().interrupt();
                         }
                     }
+
+                    //Recenter Median to group median (Works needs to uncenter though)
+                    assessedValueCenter =  new PropertyAssessments(filteredProperties).getMedian();
+                    //Need to Redraw the legend
 
                     return filteredProperties;
                 }
