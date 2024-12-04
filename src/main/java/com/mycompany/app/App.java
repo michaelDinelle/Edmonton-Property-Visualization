@@ -285,7 +285,7 @@ public class App extends Application {
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
 
-        VBox legend = createLegend(); // Add the legend to the panel
+        legend = createLegend(); // Add the legend to the panel
 
         // Initialize the text areas
         propertyInfoArea = new TextArea();
@@ -319,7 +319,13 @@ public class App extends Application {
         Label legendLabel = new Label("Legend:");
         legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         legendLabel.setStyle("-fx-text-fill: #2b5b84;");
+        refreshLegend();
 
+        return legend;
+    }
+
+    private void refreshLegend(){
+        legend.getChildren().clear();
         // Define legend items
         legend.getChildren().addAll(
                 createLegendItem("Zero Value: $0", Color.BLACK),
@@ -337,7 +343,6 @@ public class App extends Application {
                 createLegendItem("Selected", Color.MAGENTA)
         );
 
-        return legend;
     }
 
     private HBox createLegendItem(String labelText, Color color) {
@@ -577,6 +582,7 @@ public class App extends Application {
                 // Update map and display statistics
                 List<PropertyAssessment> filteredProperties = task.getValue();
                 if (filteredProperties != null) {
+                    refreshLegend();
                     displayPropertyStatisticsInfo(filteredProperties, propertyStatisticsArea, filterValue);
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
@@ -621,10 +627,10 @@ public class App extends Application {
             task.setOnSucceeded(e -> {
                 Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
                 graphicsOverlay.getGraphics().clear(); // Clear all graphics
+                refreshLegend();
                 addPropertiesToMap(propertiesClass.getProperties()); // Re-add all properties
                 Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
                 mapView.setViewpointCenterAsync(edmontonViewPoint, 15000); // Reset the view
-
                 assessedValueCenter = propertiesClass.getMedian();
                 //Redraw legend
 
