@@ -638,32 +638,6 @@ public class App extends Application {
         addPropertiesToMap(filteredProperties);
     }
 
-//    private Color getAssesmentColor(long assessedValue){
-//
-//        if (assessedValue == 0){
-//            return Color.BLACK;
-//        }
-//
-//        if (assessedValue < 50000){
-//            return Color.DARKBLUE;
-//
-//        }
-//        else if (assessedValue < 200000) {
-//            return Color.BLUE;
-//        }
-//        else if (assessedValue < 500000) {
-//            return Color.YELLOW;
-//        }
-//        else if (assessedValue < 1000000) {
-//            return Color.ORANGE;
-//        }
-//        else if (assessedValue < 50000000)  {
-//            return Color.RED;
-//        } else {
-//            return Color.DARKRED;
-//        }
-//    }
-
     // Altered version of the Spectral 11 Color Palette
     private Color getAssesmentColor(long currentAssessedValue){
 
