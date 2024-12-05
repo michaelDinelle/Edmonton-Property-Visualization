@@ -495,8 +495,6 @@ public class App extends Application {
             }
             case "Assessment Class" -> {
                 List<String> assessmentClasses = propertiesClass.getProperties().stream()
-                        //.flatMap(p -> Stream.of(p.getAssessmentClass().getAssessmentClass1(), p.getAssessmentClass().getAssessmentClass2()))
-                        // .map(p -> p.getAssessmentClass().getAssessmentClass2())
                         .map(p -> Arrays.asList(p.getAssessmentClass().getAssessmentClass1(), p.getAssessmentClass().getAssessmentClass2()))
                         .flatMap(List::stream)
                         .sorted()
@@ -526,7 +524,7 @@ public class App extends Application {
                     alert.showAndWait();
                 } else {
                     displayPropertyInfo(property);
-                    displayPieChart(property, classesPieChart);
+                    displayPieChart(property);
                     highlightSelectedProperty(property);
                 }
             } catch (NumberFormatException e) {
@@ -650,9 +648,13 @@ public class App extends Application {
                 assessedValueCenter = propertiesClass.getMedian();
                 //Redraw legend
                 refreshLegend();
-                // Reset text area's text
+                // Reset text area's text & pie chart
                 propertyInfoArea.setText("");
                 propertyStatisticsArea.setText("");
+                classesPieChart.setVisible(false);
+                classesPieChart.setManaged(false);
+                classesPieChart.setMinHeight(0);
+                classesPieChart.setMinWidth(0);
 
             });
 
@@ -794,7 +796,7 @@ public class App extends Application {
     }
 
     // Display pie chart of property assessment classes
-    private void displayPieChart(PropertyAssessment property, PieChart classesPieChart) {
+    private void displayPieChart(PropertyAssessment property) {
         classesPieChart.getData().clear();
 
         ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList(
@@ -814,10 +816,19 @@ public class App extends Application {
         classesPieChart.setTitle("Assessment Classes");
         classesPieChart.setLabelLineLength(8);
         classesPieChart.setMaxHeight(200);
-        classesPieChart.setStyle("-fx-padding: 0, -5, -15, -5");
+        classesPieChart.setStyle("-fx-padding: 0");
 
+        setupPieChartValues();
     }
 
+     // Add tool tips to each slice on the pie chart
+    private void setupPieChartValues() {
+        classesPieChart.getData().forEach(data -> {
+            String percentage = String.format("%.0f%%", data.getPieValue());
+            Tooltip tooltip = new Tooltip(percentage);
+            Tooltip.install(data.getNode(), tooltip);
+        });
+    }
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
@@ -932,6 +943,7 @@ public class App extends Application {
                                 // Display the property info in the info area
                                 if (property != null) {
                                     displayPropertyInfo(property);
+                                    displayPieChart(property);
                                     highlightSelectedProperty(property);
                                 }
                             }
