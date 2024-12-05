@@ -127,3 +127,9 @@
 .titled-pane > .content {
     -fx-background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
 }
+
+.filter-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
+}
