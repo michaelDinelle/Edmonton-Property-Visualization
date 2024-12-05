@@ -93,6 +93,8 @@ public class App extends Application {
 
     private NumberFormat numberFormat;
 
+    private ToggleGroup garageFilterGroup;
+
     public static void main(String[] args) {
         Application.launch(args);
     }
@@ -431,33 +433,48 @@ public class App extends Application {
         return button;
     }
 
-    private void addButtonsToPropertyGroupPane(){
+    private void addButtonsToPropertyGroupPane() {
         VBox propertyGroupContent = new VBox(10);
 
         Label filterLabel = new Label("Filter Properties");
-        filterLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        filterLabel.setStyle("-fx-text-fill: #2b5b84;");
+        filterLabel.getStyleClass().add("filter-label");
+
 
         filterDropdown = new ComboBox<>();
         filterDropdown.getItems().addAll("Neighborhood", "Assessment Class", "Ward");
         filterDropdown.setPromptText("Select a filter");
 
         valueDropdown = new ComboBox<>();
-            valueDropdown.setPromptText("Select a value");
+        valueDropdown.setPromptText("Select a value");
 
-            filterDropdown.setOnAction(event -> {
-                String selectedFilter = filterDropdown.getValue();
-                populateValues(selectedFilter);
+        filterDropdown.setOnAction(event -> {
+            String selectedFilter = filterDropdown.getValue();
+            populateValues(selectedFilter);
         });
 
-        filterButton = createButton("Apply Filter");
+        // Garage filter group
+        garageFilterGroup = new ToggleGroup();
 
+        RadioButton garageAllButton = new RadioButton("All");
+        garageAllButton.setToggleGroup(garageFilterGroup);
+        garageAllButton.setSelected(true); // Default selection
+
+        RadioButton garageYesButton = new RadioButton("Yes");
+        garageYesButton.setToggleGroup(garageFilterGroup);
+
+        RadioButton garageNoButton = new RadioButton("No");
+        garageNoButton.setToggleGroup(garageFilterGroup);
+
+        VBox garageFilterBox = new VBox(5);
+        garageFilterBox.getChildren().addAll(new Label("Garage Filter:"), garageAllButton, garageYesButton, garageNoButton);
+
+        filterButton = createButton("Apply Filter");
         removeFilterButton = createButton("Remove Filters");
 
-        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, filterButton, removeFilterButton);
+        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, garageFilterBox, filterButton, removeFilterButton);
         propertyGroupPane.setContent(propertyGroupContent);
-
     }
+
 
     private void addButtonsToAccountNumberPane(){
         VBox accountGroupContent = new VBox(10);
@@ -538,8 +555,12 @@ public class App extends Application {
             String selectedFilter = filterDropdown.getValue();
             String filterValue = valueDropdown.getValue();
 
-            if (selectedFilter == null || filterValue.isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a filter and enter a value.", ButtonType.OK);
+            // Determine the selected garage filter
+            RadioButton selectedGarageButton = (RadioButton) garageFilterGroup.getSelectedToggle();
+            String garageFilter = selectedGarageButton.getText();
+
+            if ((selectedFilter == null || filterValue == null || filterValue.isEmpty()) && garageFilter.equals("All")) {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a filter or a garage option.", ButtonType.OK);
                 alert.showAndWait();
                 return;
             }
@@ -548,24 +569,33 @@ public class App extends Application {
             Task<List<PropertyAssessment>> task = new Task<>() {
                 @Override
                 protected List<PropertyAssessment> call() {
-                    List<PropertyAssessment> filteredProperties;
-                    if (selectedFilter.equals("Neighborhood")) {
-                        filteredProperties = propertiesClass.getProperties().stream()
-                                .filter(property -> property.getNeighborhood().getNeighborhoodName().equals(filterValue))
-                                .collect(Collectors.toList());
+                    List<PropertyAssessment> filteredProperties = propertiesClass.getProperties();
 
-                    } else if (selectedFilter.equals("Assessment Class")) {
-                        filteredProperties = propertiesClass.getProperties().stream()
-                                .filter(property -> property.getAssessmentClass().toString().contains(filterValue))
+                    // Apply selected filter (if any)
+                    if (selectedFilter != null && filterValue != null && !filterValue.isEmpty()) {
+                        filteredProperties = filteredProperties.stream()
+                                .filter(property -> {
+                                    switch (selectedFilter) {
+                                        case "Neighborhood":
+                                            return property.getNeighborhood().getNeighborhoodName().equals(filterValue);
+                                        case "Assessment Class":
+                                            return property.getAssessmentClass().toString().contains(filterValue);
+                                        case "Ward":
+                                            return property.getNeighborhood().getWard().contains(filterValue);
+                                        default:
+                                            return true;
+                                    }
+                                })
                                 .collect(Collectors.toList());
-                    } else if (selectedFilter.equals("Ward")) {
-                        filteredProperties = propertiesClass.getProperties().stream()
-                                .filter(property -> property.getNeighborhood().getWard().contains(filterValue))
-                                .collect(Collectors.toList());
-                    } else {
-                        return null; // Invalid filter
                     }
 
+                    // Apply garage filter
+                    if (!garageFilter.equals("All")) {
+                        boolean hasGarage = garageFilter.equals("Yes");
+                        filteredProperties = filteredProperties.stream()
+                                .filter(property -> property.getGarage().equalsIgnoreCase(hasGarage ? "Y" : "N"))
+                                .collect(Collectors.toList());
+                    }
 
                     // Simulate progress
                     for (int i = 0; i < 10; i++) {
@@ -577,10 +607,6 @@ public class App extends Application {
                         }
                     }
 
-                    //Recenter Median to group median
-                    assessedValueCenter =  new PropertyAssessments(filteredProperties).getMedian();
-                    //Need to Redraw the legend
-
                     return filteredProperties;
                 }
             };
@@ -591,36 +617,33 @@ public class App extends Application {
             Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
 
             task.setOnSucceeded(e -> {
-                // Remove the loading container
                 Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
 
-                // Update map and display statistics
                 List<PropertyAssessment> filteredProperties = task.getValue();
-                if (filteredProperties != null) {
+                if (filteredProperties != null && !filteredProperties.isEmpty()) {
                     refreshLegend();
-                    displayPropertyStatisticsInfo(filteredProperties, filterValue);
-                    //Select the first property in the property list to be the center of the camera
-                    PropertyAssessment property = filteredProperties.get(0) ;
-                    Point groupPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
-                    //Zoom out further than normal to show the entire group
-                    mapView.setViewpointCenterAsync(groupPoint, 10000);
+                    displayPropertyStatisticsInfo(filteredProperties, filterValue != null ? filterValue : "Garage: " + garageFilter);
+
+                    // Update assessed value center
+                    assessedValueCenter = new PropertyAssessments(filteredProperties).getMedian();
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
+                    // Show alert if no properties match the filter
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties found matching the selected garage filter.", ButtonType.OK);
                     alert.showAndWait();
                 }
             });
 
             task.setOnFailed(e -> {
-                // Remove the loading container in case of failure
                 Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
-                task.getException().printStackTrace();
+                e.getSource().getException().printStackTrace();
             });
 
-            // Start the task in a background thread
             new Thread(task).start();
         });
     }
+
+
 
     private void removeFilterButtonFunctionality() {
         removeFilterButton.setOnAction(event -> {
