@@ -601,6 +601,11 @@ public class App extends Application {
                 if (filteredProperties != null) {
                     refreshLegend();
                     displayPropertyStatisticsInfo(filteredProperties, filterValue);
+                    //Select the first property in the property list to be the center of the camera
+                    PropertyAssessment property = filteredProperties.get(0) ;
+                    Point groupPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                    //Zoom out further than normal to show the entire group
+                    mapView.setViewpointCenterAsync(groupPoint, 10000);
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid filter selected.", ButtonType.OK);
