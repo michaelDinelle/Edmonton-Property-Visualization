@@ -577,7 +577,7 @@ public class App extends Application {
                         }
                     }
 
-                    //Recenter Median to group median (Works needs to uncenter though)
+                    //Recenter Median to group median
                     assessedValueCenter =  new PropertyAssessments(filteredProperties).getMedian();
                     //Need to Redraw the legend
 
@@ -832,6 +832,9 @@ public class App extends Application {
 
     // Highlight selected property
     private void highlightSelectedProperty(PropertyAssessment property) {
+
+        assessedValueCenter = property.getAssessedValue();
+        refreshLegend();
         // Background task for preparing graphics
         Task<List<Graphic>> task = new Task<>() {
             @Override
