@@ -644,13 +644,13 @@ public class App extends Application {
             task.setOnSucceeded(e -> {
                 Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
                 graphicsOverlay.getGraphics().clear(); // Clear all graphics
-                refreshLegend();
                 addPropertiesToMap(propertiesClass.getProperties()); // Re-add all properties
                 Point edmontonViewPoint = new Point(-113.4938, 53.5461, SpatialReferences.getWgs84());
                 mapView.setViewpointCenterAsync(edmontonViewPoint, 15000); // Reset the view
                 assessedValueCenter = propertiesClass.getMedian();
                 //Redraw legend
-
+                refreshLegend();
+                // Reset text area's text
                 propertyInfoArea.setText("");
                 propertyStatisticsArea.setText("");
 
