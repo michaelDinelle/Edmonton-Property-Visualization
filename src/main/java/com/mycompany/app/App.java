@@ -453,7 +453,7 @@ public class App extends Application {
                 // Show the statistics panel
                 rootStackPane.getChildren().add(legendPanel);
                 StackPane.setAlignment(legendPanel, Pos.BOTTOM_LEFT);
-                StackPane.setMargin(legendPanel, new Insets(10));
+                StackPane.setMargin(legendPanel, new Insets(170, 10,20 ,0));
                 StackPane.setMargin(toggleLegendButton, new Insets(10, 320, 20, 320));
                 toggleLegendButton.setText("Hide Legend");
             }
@@ -482,7 +482,7 @@ public class App extends Application {
 
         // Add the legend panel
         StackPane.setAlignment(legendPanel, Pos.BOTTOM_LEFT);
-        StackPane.setMargin(legendPanel, new Insets(170, 10,10 ,0));
+        StackPane.setMargin(legendPanel, new Insets(170, 10,20 ,0));
         rootStackPane.getChildren().add(legendPanel);
 
         // Add the legend toggle button
