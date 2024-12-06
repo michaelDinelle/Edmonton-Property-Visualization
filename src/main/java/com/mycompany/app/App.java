@@ -45,10 +45,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import javafx.scene.chart.PieChart;
 
@@ -88,6 +85,7 @@ public class App extends Application {
     private PieChart classesPieChart;
 
     private Button toggleStatsButton;
+    private Button toggleLegendButton;
 
     private long assessedValueCenter;
 
@@ -128,11 +126,12 @@ public class App extends Application {
         mapView = createMapLayout();
         Accordion accordionFilterPanel = createAccordionFilterPanel();
         statisticsPanel = createStatisticsPanel();
-        toggleStatsButton = createToggleButton();
+        toggleStatsButton = createStatsToggleButton();
         legendPanel = createLegendPanel();
+        toggleLegendButton = createLegendToggleButton();
 
         // Add all components to the StackPane in the correct order
-        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton, legendPanel);
+        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton, legendPanel, toggleLegendButton);
 
         //Add Button Functionality
         accountSearchButtonFunctionality();
@@ -161,10 +160,12 @@ public class App extends Application {
         legend.getStyleClass().add("legend");
         legendItem.getStyleClass().add("legend-item");
         legendLabel.getStyleClass().add("legend-label");
+        toggleLegendButton.getStyleClass().add("toggle-legend-button");
 
         legendPanel.getStyleClass().add("legend-panel");
 
         classesPieChart.getStyleClass().add("pie-chart");
+
 
         toggleStatsButton.getStyleClass().add("toggle-stats-button");
         filterButton.getStyleClass().add("filter-button");
@@ -410,11 +411,18 @@ public class App extends Application {
                 (int) (color.getBlue() * 255));
     }
 
-    private Button createToggleButton() {
+    private Button createStatsToggleButton() {
         toggleStatsButton = new Button("Hide Statistics");
         toggleStatsButtonFunctionality();
         return toggleStatsButton;
     }
+
+    private Button createLegendToggleButton() {
+        toggleLegendButton = new Button("Hide Legend");
+        toggleLegendButtonFunctionality();
+        return toggleLegendButton;
+    }
+
 
     private void toggleStatsButtonFunctionality() {
         toggleStatsButton.setOnAction(event -> {
@@ -434,7 +442,26 @@ public class App extends Application {
         });
     }
 
-    private void setupStackPane(MapView mapLayout, Accordion accordionFilterPanel, VBox statisticsPanel, Button toggleStatsButton, VBox legendPanel) {
+    private void toggleLegendButtonFunctionality() {
+        toggleLegendButton.setOnAction(event -> {
+            if (rootStackPane.getChildren().contains(legendPanel)) {
+                // Hide the statistics panel
+                rootStackPane.getChildren().remove(legendPanel);
+                StackPane.setMargin(toggleLegendButton, new Insets(10, 320, 20, 320));
+                toggleLegendButton.setText("Show Legend");
+            } else {
+                // Show the statistics panel
+                rootStackPane.getChildren().add(legendPanel);
+                StackPane.setAlignment(legendPanel, Pos.BOTTOM_LEFT);
+                StackPane.setMargin(legendPanel, new Insets(10));
+                StackPane.setMargin(toggleLegendButton, new Insets(10, 320, 20, 320));
+                toggleLegendButton.setText("Hide Legend");
+            }
+        });
+    }
+
+
+    private void setupStackPane(MapView mapLayout, Accordion accordionFilterPanel, VBox statisticsPanel, Button toggleStatsButton, VBox legendPanel, Button toggleLegendButton) {
         // Add the map layout (background layer)
         rootStackPane.getChildren().add(mapLayout);
 
@@ -457,6 +484,12 @@ public class App extends Application {
         StackPane.setAlignment(legendPanel, Pos.BOTTOM_LEFT);
         StackPane.setMargin(legendPanel, new Insets(170, 10,10 ,0));
         rootStackPane.getChildren().add(legendPanel);
+
+        // Add the legend toggle button
+        StackPane.setAlignment(toggleLegendButton, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(toggleLegendButton, new Insets(10, 320, 20, 320));
+        rootStackPane.getChildren().add(toggleLegendButton);
+
 
     }
 

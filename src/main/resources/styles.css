@@ -61,6 +61,13 @@
     -fx-background-radius: 10;
 }
 
+/* Toggle legend button styles */
+.toggle-legend-button {
+    -fx-background-color: #007ACC;
+    -fx-text-fill: white;
+    -fx-background-radius: 10;
+}
+
 /* Property Group Pane styles */
 .property-group-pane {
     -fx-background-color: rgba(255, 255, 255, 0.8);
