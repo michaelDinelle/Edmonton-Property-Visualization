@@ -38,6 +38,16 @@
     -fx-padding: 10;
 }
 
+
+/* legend Panel styles */
+.legend-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-alignment: top-left;
+    -fx-padding: 10;
+}
+
+
 .statistics-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;

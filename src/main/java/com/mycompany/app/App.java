@@ -91,6 +91,8 @@ public class App extends Application {
 
     private long assessedValueCenter;
 
+    private VBox legendPanel;
+
     private NumberFormat numberFormat;
 
     private ToggleGroup garageFilterGroup;
@@ -127,9 +129,10 @@ public class App extends Application {
         Accordion accordionFilterPanel = createAccordionFilterPanel();
         statisticsPanel = createStatisticsPanel();
         toggleStatsButton = createToggleButton();
+        legendPanel = createLegendPanel();
 
         // Add all components to the StackPane in the correct order
-        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton);
+        setupStackPane(mapView, accordionFilterPanel, statisticsPanel, toggleStatsButton, legendPanel);
 
         //Add Button Functionality
         accountSearchButtonFunctionality();
@@ -158,6 +161,8 @@ public class App extends Application {
         legend.getStyleClass().add("legend");
         legendItem.getStyleClass().add("legend-item");
         legendLabel.getStyleClass().add("legend-label");
+
+        legendPanel.getStyleClass().add("legend-panel");
 
         classesPieChart.getStyleClass().add("pie-chart");
 
@@ -282,19 +287,41 @@ public class App extends Application {
         return accordion;
     }
 
+    private VBox createLegendPanel(){
+        legendPanel = new VBox();
+
+        legendLabel = new Label("Legend");
+        legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        legendLabel.setStyle("-fx-text-fill: #2b5b84;");
+
+        legend = createLegend(); // Add the legend to the panel
+        legendPanel.getChildren().addAll(
+                legendLabel,
+                legend
+        );
+
+        legendPanel.setPrefWidth(300);
+        legendPanel.setMaxWidth(300);
+
+        legendPanel.setMaxHeight(Region.USE_PREF_SIZE);
+        legendPanel.setPrefHeight(Region.USE_COMPUTED_SIZE);
+
+        return legendPanel;
+
+
+    }
+
     private VBox createStatisticsPanel() {
         statisticsPanel = new VBox(10);
 
         statisticsPanel.setPrefWidth(300);
         statisticsPanel.setMaxWidth(300);
 
-        legendLabel = new Label("Legend");
 
         statisticsLabel = new Label("Property Overview");
         statisticsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         statisticsLabel.setStyle("-fx-text-fill: #2b5b84;");
 
-        legend = createLegend(); // Add the legend to the panel
 
         // Initialize the text areas
         propertyInfoArea = new TextArea();
@@ -318,8 +345,7 @@ public class App extends Application {
 
 
         statisticsPanel.getChildren().addAll(
-                legendLabel,
-                legend,
+
                 statisticsLabel,
                 propertyInfoArea,        // Add property info area for displaying details
                 classesPieChart,        // Add pie chart displaying property assessment classes
@@ -408,7 +434,7 @@ public class App extends Application {
         });
     }
 
-    private void setupStackPane(MapView mapLayout, Accordion accordionFilterPanel, VBox statisticsPanel, Button toggleStatsButton) {
+    private void setupStackPane(MapView mapLayout, Accordion accordionFilterPanel, VBox statisticsPanel, Button toggleStatsButton, VBox legendPanel) {
         // Add the map layout (background layer)
         rootStackPane.getChildren().add(mapLayout);
 
@@ -426,6 +452,12 @@ public class App extends Application {
         StackPane.setAlignment(toggleStatsButton, Pos.TOP_RIGHT);
         StackPane.setMargin(toggleStatsButton, new Insets(10, 320, 0, 320));
         rootStackPane.getChildren().add(toggleStatsButton);
+
+        // Add the legend panel
+        StackPane.setAlignment(legendPanel, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(legendPanel, new Insets(170, 10,10 ,0));
+        rootStackPane.getChildren().add(legendPanel);
+
     }
 
     private Button createButton(String text) {
