@@ -32,11 +32,14 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -95,6 +98,9 @@ public class App extends Application {
 
     private ToggleGroup garageFilterGroup;
 
+    private TextField centerInputField;
+
+
     public static void main(String[] args) {
         Application.launch(args);
     }
@@ -137,6 +143,7 @@ public class App extends Application {
         accountSearchButtonFunctionality();
         filterButtonFunctionality();
         removeFilterButtonFunctionality();
+        centerInputFieldFunctionality();
 
         // Add click functionality to each point on the map
         setupClickHandler();
@@ -295,10 +302,15 @@ public class App extends Application {
         legendLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         legendLabel.setStyle("-fx-text-fill: #2b5b84;");
 
+        centerInputField = new TextField();
+        centerInputField.setPromptText("Enter a new value to center the map around");
+
         legend = createLegend(); // Add the legend to the panel
         legendPanel.getChildren().addAll(
                 legendLabel,
-                legend
+                legend,
+                centerInputField
+
         );
 
         legendPanel.setPrefWidth(300);
@@ -602,6 +614,77 @@ public class App extends Application {
         }
     }
 
+    private void centerInputFieldFunctionality(){
+        centerInputField.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent keyEvent) {
+                if(keyEvent.getCode().equals(KeyCode.ENTER)){
+
+                    //Get value from input field -> need to alert upon invalid entry
+
+                    String centerString = centerInputField.getText().trim();
+
+
+                    final Long newCenter; // Declare priceValue as final
+                    if (centerString.isEmpty()) {
+                        try {
+                            newCenter = Long.parseLong(centerString);
+                        } catch (NumberFormatException e) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid price value. Please enter a valid number.", ButtonType.OK);
+                            alert.showAndWait();
+                            return;
+                        }
+                    }else {
+                        newCenter = null;
+                    }
+
+                    assessedValueCenter = Long.parseLong(centerString);
+
+                    // Create a background task to simulate progress
+                    Task<Void> task = new Task<>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            // Simulate progress
+                            for (int i = 0; i <= 10; i++) {
+                                updateProgress(i, 10);
+                                Thread.sleep(50); // Simulated delay
+                            }
+                            return null;
+                        }
+                    };
+
+                    // Create a loading container with a progress bar and label
+                    VBox loadingContainer = createLoadingContainer("recentering", task);
+
+                    // Add the loading container to the root stack pane
+                    Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
+
+                    // When the task succeeds, clear the filters and reset the map
+                    task.setOnSucceeded(e -> {
+                        Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+                        graphicsOverlay.getGraphics().clear(); // Clear all graphics
+                        addPropertiesToMap(propertiesClass.getProperties()); // Re-add all properties
+                        //Redraw legend
+                        refreshLegend();
+
+                    });
+
+                    // Handle task failure
+                    task.setOnFailed(e -> {
+                        Platform.runLater(() -> rootStackPane.getChildren().remove(loadingContainer));
+                        e.getSource().getException().printStackTrace();
+                    });
+
+                    // Run the task in a background thread
+                    new Thread(task).start();
+
+
+                }
+
+            }
+        });
+    }
+
     private void accountSearchButtonFunctionality() {
         // Add functionality to Account Search button
         accountSearchButton.setOnAction(event -> {
@@ -803,6 +886,7 @@ public class App extends Application {
                 valueDropdown.getSelectionModel().clearSelection();
                 priceComparisonDropdown.getSelectionModel().clearSelection();
                 priceInputField.setText("");
+                centerInputField.setText("");
                 accountSearchInput.setText("");
                 garageFilterGroup.selectToggle(garageFilterGroup.getToggles().get(0));
 
