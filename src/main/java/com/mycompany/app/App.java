@@ -658,6 +658,12 @@ public class App extends Application {
 
                     // Update other UI components
                     displayPropertyStatisticsInfo(filteredProperties, "Custom Filter");
+
+                    PropertyAssessment property = filteredProperties.get(0) ;
+                    Point groupPoint = new Point(property.getLocation().getLng(), property.getLocation().getLat(), SpatialReferences.getWgs84());
+                    //Zoom out further than normal to show the entire group
+                    mapView.setViewpointCenterAsync(groupPoint, 10000);
+
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties match the selected filters.", ButtonType.OK);
