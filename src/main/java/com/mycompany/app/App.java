@@ -433,12 +433,14 @@ public class App extends Application {
         return button;
     }
 
+    private TextField priceInputField;
+    private ComboBox<String> priceComparisonDropdown;
+
     private void addButtonsToPropertyGroupPane() {
         VBox propertyGroupContent = new VBox(10);
 
         Label filterLabel = new Label("Filter Properties");
         filterLabel.getStyleClass().add("filter-label");
-
 
         filterDropdown = new ComboBox<>();
         filterDropdown.getItems().addAll("Neighborhood", "Assessment Class", "Ward");
@@ -457,7 +459,7 @@ public class App extends Application {
 
         RadioButton garageAllButton = new RadioButton("All");
         garageAllButton.setToggleGroup(garageFilterGroup);
-        garageAllButton.setSelected(true); // Default selection
+        garageAllButton.setSelected(true);
 
         RadioButton garageYesButton = new RadioButton("Yes");
         garageYesButton.setToggleGroup(garageFilterGroup);
@@ -468,12 +470,25 @@ public class App extends Application {
         VBox garageFilterBox = new VBox(5);
         garageFilterBox.getChildren().addAll(new Label("Garage Filter:"), garageAllButton, garageYesButton, garageNoButton);
 
+        // Price filtering controls
+        Label priceFilterLabel = new Label("Price Filter:");
+        priceInputField = new TextField();
+        priceInputField.setPromptText("Enter price (e.g., 100000)");
+
+        priceComparisonDropdown = new ComboBox<>();
+        priceComparisonDropdown.getItems().addAll("Under", "Equal", "Above");
+        priceComparisonDropdown.setPromptText("Select comparison");
+
+        VBox priceFilterBox = new VBox(5);
+        priceFilterBox.getChildren().addAll(priceFilterLabel, priceInputField, priceComparisonDropdown);
+
         filterButton = createButton("Apply Filter");
         removeFilterButton = createButton("Remove Filters");
 
-        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, garageFilterBox, filterButton, removeFilterButton);
+        propertyGroupContent.getChildren().addAll(filterLabel, filterDropdown, valueDropdown, garageFilterBox, priceFilterBox, filterButton, removeFilterButton);
         propertyGroupPane.setContent(propertyGroupContent);
     }
+
 
 
     private void addButtonsToAccountNumberPane(){
@@ -555,23 +570,31 @@ public class App extends Application {
             String selectedFilter = filterDropdown.getValue();
             String filterValue = valueDropdown.getValue();
 
-            // Determine the selected garage filter
             RadioButton selectedGarageButton = (RadioButton) garageFilterGroup.getSelectedToggle();
             String garageFilter = selectedGarageButton.getText();
 
-            if ((selectedFilter == null || filterValue == null || filterValue.isEmpty()) && garageFilter.equals("All")) {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a filter or a garage option.", ButtonType.OK);
-                alert.showAndWait();
-                return;
+            String priceComparison = priceComparisonDropdown.getValue();
+            String priceInput = priceInputField.getText().trim();
+
+            final Long priceValue; // Declare priceValue as final
+            if (!priceInput.isEmpty()) {
+                try {
+                    priceValue = Long.parseLong(priceInput);
+                } catch (NumberFormatException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid price value. Please enter a valid number.", ButtonType.OK);
+                    alert.showAndWait();
+                    return;
+                }
+            } else {
+                priceValue = null; // No price filtering if input is empty
             }
 
-            // Background task for filtering
             Task<List<PropertyAssessment>> task = new Task<>() {
                 @Override
                 protected List<PropertyAssessment> call() {
                     List<PropertyAssessment> filteredProperties = propertiesClass.getProperties();
 
-                    // Apply selected filter (if any)
+                    // Apply primary filter
                     if (selectedFilter != null && filterValue != null && !filterValue.isEmpty()) {
                         filteredProperties = filteredProperties.stream()
                                 .filter(property -> {
@@ -597,13 +620,24 @@ public class App extends Application {
                                 .collect(Collectors.toList());
                     }
 
-                    // Simulate progress
-                    for (int i = 0; i < 10; i++) {
-                        updateProgress(i + 1, 10);
-                        try {
-                            Thread.sleep(50); // Simulated delay
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+                    // Apply price filter if input is valid
+                    if (priceValue != null && priceComparison != null && !priceComparison.isEmpty()) {
+                        switch (priceComparison) {
+                            case "Under":
+                                filteredProperties = filteredProperties.stream()
+                                        .filter(property -> property.getAssessedValue() < priceValue)
+                                        .collect(Collectors.toList());
+                                break;
+                            case "Equal":
+                                filteredProperties = filteredProperties.stream()
+                                        .filter(property -> property.getAssessedValue() == priceValue)
+                                        .collect(Collectors.toList());
+                                break;
+                            case "Above":
+                                filteredProperties = filteredProperties.stream()
+                                        .filter(property -> property.getAssessedValue() > priceValue)
+                                        .collect(Collectors.toList());
+                                break;
                         }
                     }
 
@@ -612,8 +646,6 @@ public class App extends Application {
             };
 
             VBox loadingContainer = createLoadingContainer("Applying Filter", task);
-
-            // Add the loading container to the rootStackPane
             Platform.runLater(() -> rootStackPane.getChildren().add(loadingContainer));
 
             task.setOnSucceeded(e -> {
@@ -621,16 +653,18 @@ public class App extends Application {
 
                 List<PropertyAssessment> filteredProperties = task.getValue();
                 if (filteredProperties != null && !filteredProperties.isEmpty()) {
-                    refreshLegend();
-                    displayPropertyStatisticsInfo(filteredProperties, filterValue != null ? filterValue : "Garage: " + garageFilter);
+                    // Update the legend dynamically based on filtered properties
+                    updateLegend(filteredProperties);
 
-                    // Update assessed value center
-                    assessedValueCenter = new PropertyAssessments(filteredProperties).getMedian();
+                    // Update other UI components
+                    displayPropertyStatisticsInfo(filteredProperties, "Custom Filter");
                     updateMapWithFilteredProperties(filteredProperties);
                 } else {
-                    // Show alert if no properties match the filter
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties found matching the selected garage filter.", ButtonType.OK);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "No properties match the selected filters.", ButtonType.OK);
                     alert.showAndWait();
+
+                    // Reset the legend if no properties match
+                    updateLegend(null);
                 }
             });
 
@@ -643,7 +677,18 @@ public class App extends Application {
         });
     }
 
+    private void updateLegend(List<PropertyAssessment> filteredProperties) {
+        if (filteredProperties != null && !filteredProperties.isEmpty()) {
+            // Update the assessed value center (median) based on the filtered properties
+            assessedValueCenter = new PropertyAssessments(filteredProperties).getMedian();
+        } else {
+            // Reset to the original center if no properties match
+            assessedValueCenter = propertiesClass.getMedian();
+        }
 
+        // Refresh the legend with the new median
+        refreshLegend();
+    }
 
     private void removeFilterButtonFunctionality() {
         removeFilterButton.setOnAction(event -> {
