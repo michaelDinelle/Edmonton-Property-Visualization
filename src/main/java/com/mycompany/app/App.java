@@ -624,19 +624,21 @@ public class App extends Application {
 
                     String centerString = centerInputField.getText().trim();
 
+
+                    final Long newCenter; // Declare priceValue as final
                     if (centerString.isEmpty()) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING, "Please enter a new center for the Assessed Value.", ButtonType.OK);
-                        alert.showAndWait();
-                        return;
+                        try {
+                            newCenter = Long.parseLong(centerString);
+                        } catch (NumberFormatException e) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid price value. Please enter a valid number.", ButtonType.OK);
+                            alert.showAndWait();
+                            return;
+                        }
+                    }else {
+                        newCenter = null;
                     }
 
-                    try {
-                        assessedValueCenter = Integer.parseInt(centerString);
-
-                    } catch (NumberFormatException e) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Assessed Value center must be a valid number", ButtonType.OK);
-                    }
-
+                    assessedValueCenter = Long.parseLong(centerString);
 
                     // Create a background task to simulate progress
                     Task<Void> task = new Task<>() {
@@ -884,6 +886,7 @@ public class App extends Application {
                 valueDropdown.getSelectionModel().clearSelection();
                 priceComparisonDropdown.getSelectionModel().clearSelection();
                 priceInputField.setText("");
+                centerInputField.setText("");
                 accountSearchInput.setText("");
                 garageFilterGroup.selectToggle(garageFilterGroup.getToggles().get(0));
 
