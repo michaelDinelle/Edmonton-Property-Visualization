@@ -22,7 +22,7 @@ Scott MacAulay - https://github.com/John-smith088
 
 Michael Dinelle - https://github.com/michaelDinelle
 
-Brighton ?
+Brighton Gosinet - https://github.com/BrightonGosinet
 
 Matt ?
 
