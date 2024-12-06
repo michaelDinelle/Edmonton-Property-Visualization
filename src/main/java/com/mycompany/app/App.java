@@ -734,6 +734,12 @@ public class App extends Application {
                 classesPieChart.setManaged(false);
                 classesPieChart.setMinHeight(0);
                 classesPieChart.setMinWidth(0);
+                filterDropdown.getSelectionModel().clearSelection();
+                valueDropdown.getSelectionModel().clearSelection();
+                priceComparisonDropdown.getSelectionModel().clearSelection();
+                priceInputField.setText("");
+                accountSearchInput.setText("");
+                garageFilterGroup.selectToggle(garageFilterGroup.getToggles().get(0));
 
             });
 
@@ -753,6 +759,7 @@ public class App extends Application {
     private void updateMapWithFilteredProperties(List<PropertyAssessment> filteredProperties) {
         graphicsOverlay.getGraphics().clear();
         addPropertiesToMap(filteredProperties);
+
     }
 
     // Altered version of the Spectral 11 Color Palette
