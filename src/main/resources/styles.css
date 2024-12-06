@@ -93,15 +93,22 @@
     -fx-border-width: 1;
 }
 
-.pie-chart-content {
-    -fx-translate-y: -15px;
+.chart-content {
     -fx-translate-x: -4px;
 }
 
-.pie-chart-title {
+.chart-title {
     -fx-font-size: 15px;
-    -fx-padding: 10px 0px 0px 10px;
+    -fx-padding: 5px, 5px;
     -fx-translate-x: -60;
+}
+
+.tooltip {
+    -fx-font-size: 12px;
+    -fx-background-color: #e2e2e2;
+    -fx-text-fill: black;
+    -fx-border-color: black;
+    -fx-padding: 5px;
 }
 
 /* Loading container styles */
@@ -119,4 +126,10 @@
 
 .titled-pane > .content {
     -fx-background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+}
+
+.filter-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2b5b84;
 }
