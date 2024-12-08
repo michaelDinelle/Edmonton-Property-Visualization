@@ -6,6 +6,12 @@
 
 ### IntelliJ IDEA
 
+# For first time use.
+Select File > Project Structure... and ensure that the Project SDK and language level are set to use `Java 17`.
+In the Maven view, under Plugins > dependency, double-click the `dependency:unpack` goal. This will unpack the native libraries into $USER_HOME/.arcgis.
+
+
+# Running after unpacking 
 1. Open IntelliJ IDEA and select _File > Open..._.
 2. Choose the java-maven-starter-project directory and click _OK_.
 3. Open the Maven view with _View > Tool Windows > Maven_.
@@ -29,3 +35,4 @@ Matt English - https://github.com/Menglish025
 ## Resources
 
 * [ArcGIS Maps SDK for Java](https://developers.arcgis.com/java/)
+
