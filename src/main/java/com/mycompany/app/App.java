@@ -46,6 +46,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
@@ -180,9 +182,22 @@ public class App extends Application {
         accountSearchButton.getStyleClass().add("account-search-button");
     }
 
+    public static String readApiKey(String fileName) {
+        try {
+            Path filePath = Path.of(fileName);
+            System.out.println("Looking for API key file at: " + filePath.toAbsolutePath());
+            return Files.readString(filePath).trim();
+        } catch (IOException e) {
+            System.err.println("Error reading the API key: " + e.getMessage());
+            return null;
+        }
+    }
+
     private void initializeArcGISRuntime() {
         // Set API key for ArcGIS
-        String yourApiKey = "AAPTxy8BH1VEsoebNVZXo8HurFJ2xCDXvFC-uJSDrIEtVkCMkq-W26QCtQCgZQipt1lUwR3Pm3yRRKbeYBv6kCefEqVXMAsnQ4rVMkNdiFC5DLtXmhx_Daydix9ND6gKSfXvNdbEQeQwWhhHluGF5DXHa496Q77CndgVM7EY_nadJd-0J9bw5HiOrqsb4as3xU5lBVtBAp2G1FB5WYInTpK_0C6_6_reJIkqqnHUoC6Ez_o.AT1_V1QXZfZZ";
+        // Please paste your key into a file named secret.txt
+        String yourApiKey = readApiKey("secret.txt");
+        System.out.println(yourApiKey);
         ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
     }
 
