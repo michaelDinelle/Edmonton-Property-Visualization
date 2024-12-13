@@ -1,4 +1,4 @@
-# CMPT305 Edmonton Housing Group Project
+# Edmonton City Property Visualization
 
 ![screenshot](projectscreenshot.png)
 
